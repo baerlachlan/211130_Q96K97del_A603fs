@@ -1,0 +1,34 @@
+## Common large files
+*.fastq.gz
+*.fq.gz
+*.fa
+*.bam
+*.bai
+*.gds
+*.vcf.gz
+*.vcf.gz.tbi
+
+## Python or snakemake workflow related
+*/.snakemake/
+*__pycache__*
+*.snakemake_timestamp
+*/workflow/log
+*/resources
+
+## Project-specific files
+.Rproj.user
+*mgikit*
+
+## analysis-variants
+**/2_genomicsDB
+**/*.firstPass.table
+**/*.secondPass.table
+**/*_STARpass*
+**/*_STARgenome*
+**/*trim/log/*
+**/*addUmis/log/*
+**/*align/log/*
+**/*.snvs.txt.gz
+**/*.fq1.gz
+**/*.fq2.gz
+**/*.static.tsv
