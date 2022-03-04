@@ -21,14 +21,12 @@
 
 ## analysis-variants
 **/2_genomicsDB
-**/*.firstPass.table
-**/*.secondPass.table
+**/*addUmis/log/*
+**/*trim/log/*
 **/*_STARpass*
 **/*_STARgenome*
-**/*trim/log/*
-**/*addUmis/log/*
 **/*align/log/*
+**/*.firstPass.table
+**/*.secondPass.table
 **/*.snvs.txt.gz
-**/*.fq1.gz
-**/*.fq2.gz
 **/*.static.tsv

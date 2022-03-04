@@ -94,7 +94,7 @@ rule variants_genotype:
         vcf = temp(os.path.join("results", variants_dir, "3_jointGenotype", "all_samples.vcf.gz")),
         vcfIndex = temp(os.path.join("results", variants_dir, "3_jointGenotype", "all_samples.vcf.gz.tbi")),
         detailMetrics = os.path.join("results", variants_dir, "3_jointGenotype", "log", "all_samples.variant_calling_detail_metrics"),
-        summaryMetrics = os.path.join("results", variants_dir, "3_jointGenotype", "log", "all_samples.variant_calling_summaroutput: html_documenty_metrics"),
+        summaryMetrics = os.path.join("results", variants_dir, "3_jointGenotype", "log", "all_samples.variant_calling_summary_metrics"),
     params:
         gendb = os.path.join("gendb://" + "results", variants_dir, "2_genomicsDB"),
         metricsBname = os.path.join("results", variants_dir, "3_jointGenotype", "log", "all_samples"),

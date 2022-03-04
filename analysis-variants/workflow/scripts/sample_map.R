@@ -6,12 +6,12 @@ library(tibble)
 ## Allow user to run interactively or as part of snakemake workflow
 if (exists("snakemake")) {
     variants_dir <- snakemake@params[["variants_dir"]]
-    gvcf_path <- file.path(variants_dir, "1_gvcf")
-    sample_map <- file.path(variants_dir, "sample_map.tsv")
+    gvcf_path <- file.path("results", variants_dir, "1_gvcf")
+    sample_map <- file.path("results", variants_dir, "sample_map.tsv")
 } else {
     ## Edit these variables manually if running interactively
     variants_dir <- dirname(rstudioapi::getSourceEditorContext()$path) %>%
-        str_remove("/smk/scripts") %>%
+        str_remove("/workflow/scripts") %>%
         file.path("10_variants")
     gvcf_path <- file.path(variants_dir, "1_gvcf")
     sample_map <- file.path(variants_dir, "sample_map.tsv")

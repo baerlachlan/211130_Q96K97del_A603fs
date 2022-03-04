@@ -42,6 +42,7 @@ rule wasp_remap:
     params:
         overhang = config["align"]["read_length"] - 1,
         bname = os.path.join("results", wasp_dir, "3_remap", "{SAMPLE}"),
+        wasp_dir = os.path.join("results", wasp_dir)
     conda:
         "../envs/ase.yml"
     resources:
@@ -62,8 +63,8 @@ rule wasp_remap:
             --outFileNamePrefix {params.bname}
 
         mkdir -p 08_wasp/3_remap/log
-        mv {params.bname}*out 08_wasp/3_remap/log
-        mv {params.bname}*tab 08_wasp/3_remap/log
+        mv {params.bname}*out {params.wasp_dir}/log
+        mv {params.bname}*tab {params.wasp_dir}/log
 
         samtools sort -o {output.remapped_sorted} {output.remapped_unsorted}
         samtools index {output.remapped_sorted}

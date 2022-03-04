@@ -11,7 +11,7 @@ if (exists("snakemake")) {
   proj_root <- snakemake@params[["proj_root"]]
   variants_dir <- snakemake@params[["variants_dir"]]
   wasp_dir <- snakemake@params[["wasp_dir"]]
-  wasp_dir <- snakemake@params[["aseRC_dir"]]
+  aseRC_dir <- snakemake@params[["aseRC_dir"]]
   ## Otherwise if running via snakemake, variables will be setup automatically
 } else {
   proj_root <- "/hpcfs/users/a1647910/210408_psen1_fADfAI/analysis-variants"
@@ -21,7 +21,7 @@ if (exists("snakemake")) {
 }
 
 vcf_file <- file.path(
-  proj_root, variants_dir, "6_select", "all_samples.vcf.gz"
+  proj_root, "results", variants_dir, "6_select", "all_samples.vcf.gz"
 )
 stopifnot(file.exists(vcf_file))
 
@@ -74,6 +74,7 @@ lapply(hetSnvs, function(x){
     sample <- unique(x$sample)
     path <- file.path(
       proj_root,
+      "results",
       wasp_dir,
       "1_snvs",
       sample,
@@ -96,6 +97,7 @@ lapply(hetSnvs, function(x){
   sample <- unique(x$sample)
   path <- file.path(
     proj_root,
+    "results",
     aseRC_dir,
     "intervals",
     paste0(sample, ".intervals")

@@ -14,11 +14,11 @@ rule splitNCigar:
     resources:
         cpu = 8,
         ntasks = 1,
-        mem_mb = 32000,
+        mem_mb = 64000,
         time = "00-08:00:00",
     shell:
         """
-        gatk --java-options "-Xmx16g -Xms16g" \
+        gatk --java-options "-Xms4g -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10" \
             SplitNCigarReads \
             -R {input.refFa} \
             -I {input.bam} \

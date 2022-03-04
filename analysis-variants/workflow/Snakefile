@@ -9,7 +9,7 @@ configfile: "config/config.yml"
 
 include: "rules/setup.smk"
 
-samples = samples[0:6]
+# samples = samples[0:12]
 
 ## Avoid ambiguity in filenames when multiple wildcards are used
 wildcard_constraints:

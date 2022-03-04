@@ -35,6 +35,7 @@ if not config["umi"]["add_header"]["activate"]:
     align_ind -= 1
     addRG_ind -= 1
     mergeSamples_ind -= 1
+    groupUmis_ind -= 1
     markDuplicates_ind -= 1
     splitNCigar_ind -= 1
     knownVariants_ind -= 1

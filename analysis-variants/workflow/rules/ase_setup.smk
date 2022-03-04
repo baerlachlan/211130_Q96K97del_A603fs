@@ -1,6 +1,7 @@
 rule ase_setup:
     input:
         bams = expand(os.path.join("results", bqsr_dir, "bam", "{SAMPLE}.bam"), SAMPLE=samples),
+        vcf = rules.variants_select.output.vcf
     output:
         snvDir = temp(directory(expand(os.path.join("results", wasp_dir, "1_snvs", "{SAMPLE}"), SAMPLE=samples))),
         intervals = temp(expand(os.path.join("results", aseRC_dir, "intervals", "{SAMPLE}.intervals"), SAMPLE=samples)),

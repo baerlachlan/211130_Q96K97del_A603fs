@@ -36,8 +36,8 @@ rule bqsr_apply:
         refDict = rules.refs_refDict.output,
         recal = rules.bqsr_firstPass.output,
     output:
-        bam = temp(os.path.join("results", bqsr_dir, "bam", "{SAMPLE}.bam")),
-        bamIndex = temp(os.path.join("results", bqsr_dir, "bam", "{SAMPLE}.bai")),
+        bam = os.path.join("results", bqsr_dir, "bam", "{SAMPLE}.bam"),
+        bamIndex = os.path.join("results", bqsr_dir, "bam", "{SAMPLE}.bai"),
         metrics = os.path.join("results", bqsr_dir, "metrics", "{SAMPLE}.tsv"),
     conda:
         "../envs/gatk.yml"
