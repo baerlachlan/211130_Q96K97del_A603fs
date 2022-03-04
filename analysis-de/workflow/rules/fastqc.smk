@@ -1,8 +1,8 @@
 rule fastqc_raw:
     input:
-        os.path.join("results", raw_dir, "fastq", "{SAMPLE}{MERGETAG}{PAIRTAG}" + config["fastq_ext"]),
+        os.path.join("results", raw_dir, "fastq", "{SAMPLE}{MERGETAG, .*}{PAIRTAG}" + config["fastq_ext"]),
     output:
-        multiext(os.path.join("results", raw_dir, "FastQC", "{SAMPLE}{MERGETAG}{PAIRTAG}_fastqc"), ".zip", ".html"),
+        multiext(os.path.join("results", raw_dir, "FastQC", "{SAMPLE}{MERGETAG, .*}{PAIRTAG}_fastqc"), ".zip", ".html"),
     params:
         outDir = os.path.join("results", raw_dir, "FastQC"),
     conda:
