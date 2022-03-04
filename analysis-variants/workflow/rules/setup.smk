@@ -4,11 +4,10 @@
 
 if not config["umi"]["activate"]:
     config["umi"]["add_header"]["activate"] = False
-    config["umi"]["add_header"]["tag"] = None
 if not config["umi"]["add_header"]["activate"]:
-    config["umi"]["add_header"]["tag"] = None
+    config["umi"]["add_header"]["tag"] = []
 if not config["merge_samples"]["activate"]:
-    config["merge_samples"]["tags"] = None
+    config["merge_samples"]["tags"] = []
 
 ####
 ## Directory structure
@@ -180,13 +179,13 @@ def mergeSamples_inputs(wildcards):
             "results",
             groupUmis_dir if config["umi"]["activate"] else addRG_dir,
             "bam",
-            wildcards.SAMPLE + "{MERGETAG}" + ".bam"
+            wildcards.SAMPLE + "{MERGETAG, .*}" + ".bam"
         ), MERGETAG = config["merge_samples"]["tags"]),
         "bamIndex" : expand(os.path.join(
             "results",
             groupUmis_dir if config["umi"]["activate"] else addRG_dir,
             "bam",
-            wildcards.SAMPLE + "{MERGETAG}" + ".bam.bai"
+            wildcards.SAMPLE + "{MERGETAG, .*}" + ".bam.bai"
         ), MERGETAG = config["merge_samples"]["tags"])
     }
 
@@ -244,7 +243,7 @@ def workflow_outputs():
 
     ## FastQC reports
     fqc_raw = expand(
-        os.path.join("results", raw_dir, "FastQC/{SAMPLE}{MERGETAG}{PAIRTAG}_fastqc.{EXT}"),
+        os.path.join("results", raw_dir, "FastQC/{SAMPLE}{MERGETAG, .*}{PAIRTAG}_fastqc.{EXT}"),
         SAMPLE=samples,
         MERGETAG=config["merge_samples"]["tags"],
         PAIRTAG=config["pair_tags"],
@@ -252,7 +251,7 @@ def workflow_outputs():
     )
     outputs.extend(fqc_raw)
     fqc_trim = expand(
-        os.path.join("results", trim_dir, "FastQC/{SAMPLE}{MERGETAG}{PAIRTAG}_fastqc.{EXT}"),
+        os.path.join("results", trim_dir, "FastQC/{SAMPLE}{MERGETAG, .*}{PAIRTAG}_fastqc.{EXT}"),
         SAMPLE=samples,
         MERGETAG=config["merge_samples"]["tags"],
         PAIRTAG=config["pair_tags"],
@@ -260,7 +259,7 @@ def workflow_outputs():
     )
     outputs.extend(fqc_trim)
     fqc_align = expand(
-        os.path.join("results", align_dir, "FastQC/{SAMPLE}{MERGETAG}_fastqc.{EXT}"),
+        os.path.join("results", align_dir, "FastQC/{SAMPLE}{MERGETAG, .*}_fastqc.{EXT}"),
         SAMPLE=samples,
         MERGETAG=config["merge_samples"]["tags"],
         EXT=["html", "zip"]

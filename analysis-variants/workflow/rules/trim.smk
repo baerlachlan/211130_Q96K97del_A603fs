@@ -2,9 +2,9 @@ rule trim:
     input:
         unpack(trim_inputs),
     output:
-        R1 = temp(os.path.join("results", trim_dir, "fastq", "{SAMPLE}{MERGETAG}" + config["pair_tags"][0] + config["fastq_ext"])),
-        R2 = temp(os.path.join("results", trim_dir, "fastq", "{SAMPLE}{MERGETAG}" + config["pair_tags"][1] + config["fastq_ext"])),
-        html = os.path.join("results", trim_dir, "log", "{SAMPLE}{MERGETAG}.html"),
+        R1 = temp(os.path.join("results", trim_dir, "fastq", "{SAMPLE}{MERGETAG, .*}" + config["pair_tags"][0] + config["fastq_ext"])),
+        R2 = temp(os.path.join("results", trim_dir, "fastq", "{SAMPLE}{MERGETAG, .*}" + config["pair_tags"][1] + config["fastq_ext"])),
+        html = os.path.join("results", trim_dir, "log", "{SAMPLE}{MERGETAG, .*}.html"),
     conda:
         "../envs/gatk.yml"
     resources:

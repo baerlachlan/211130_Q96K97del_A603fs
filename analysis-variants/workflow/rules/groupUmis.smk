@@ -3,8 +3,8 @@ rule groupUmis:
 		bam = rules.addRG.output.bam,
 		bamIndex = rules.addRG.output.bamIndex,
 	output:
-		bam = temp(os.path.join("results", groupUmis_dir, "bam", "{SAMPLE}{MERGETAG}.bam")),
-		bamIndex = temp(os.path.join("results", groupUmis_dir, "bam", "{SAMPLE}{MERGETAG}.bam.bai")),
+		bam = temp(os.path.join("results", groupUmis_dir, "bam", "{SAMPLE}{MERGETAG, .*}.bam")),
+		bamIndex = temp(os.path.join("results", groupUmis_dir, "bam", "{SAMPLE}{MERGETAG, .*}.bam.bai")),
 	conda:
 		"../envs/gatk.yml"
 	resources:

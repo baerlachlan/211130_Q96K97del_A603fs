@@ -50,7 +50,7 @@ rule refs_refDict:
         cpu = 1,
         ntasks = 1,
         mem_mb = 4000,
-        time = "00-00:10:00",
+        time = "00-00:30:00",
     shell:
         "gatk CreateSequenceDictionary -R {input}"
 
@@ -65,7 +65,7 @@ rule refs_refIndex:
         cpu = 1,
         ntasks = 1,
         mem_mb = 4000,
-        time = "00-00:10:00",
+        time = "00-00:30:00",
     shell:
         "samtools faidx {input}"
 
@@ -83,7 +83,7 @@ rule refs_starIndex:
         cpu = 16,
         ntasks = 1,
         mem_mb = 32000,
-        time = "00-00:30:00",
+        time = "00-01:30:00",
     shell:
         """
         zcat {input.gtf} > temp.gtf
@@ -110,6 +110,6 @@ rule refs_knownVariantsIndex:
         cpu = 1,
         ntasks = 1,
         mem_mb = 4000,
-        time = "00-00:10:00",
+        time = "00-00:30:00",
     shell:
         "tabix -p vcf {input}"

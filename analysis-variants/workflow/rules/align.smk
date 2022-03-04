@@ -4,14 +4,14 @@ rule align:
         R2 = rules.trim.output.R2,
         starIndex = rules.refs_starIndex.output,
     output:
-        bam = temp(os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG}.bam")),
-        bamIndex = temp(os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG}.bam.bai")),
-        STARgenome = temp(directory(os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG}_STARgenome"))),
-        STARpass1 = temp(directory(os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG}_STARpass1"))),
+        bam = temp(os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG, .*}.bam")),
+        bamIndex = temp(os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG, .*}.bam.bai")),
+        STARgenome = temp(directory(os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG, .*}_STARgenome"))),
+        STARpass1 = temp(directory(os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG, .*}_STARpass1"))),
     params:
         overhang = config["align"]["read_length"] - 1,
-        bname = os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG}"),
-        bamUnsorted = os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG}Aligned.out.bam"),
+        bname = os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG, .*}"),
+        bamUnsorted = os.path.join("results", align_dir, "bam", "{SAMPLE}{MERGETAG, .*}Aligned.out.bam"),
         align_dir = os.path.join("results", align_dir),
     conda:
         "../envs/gatk.yml"

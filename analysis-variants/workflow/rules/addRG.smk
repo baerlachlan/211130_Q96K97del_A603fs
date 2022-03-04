@@ -3,9 +3,9 @@ rule addRG:
         bam = rules.align.output.bam,
         bamIndex = rules.align.output.bamIndex,
     output:
-        bam = temp(os.path.join("results", addRG_dir, "bam", "{SAMPLE}{MERGETAG}.bam")),
-        bamIndex = temp(os.path.join("results", addRG_dir, "bam", "{SAMPLE}{MERGETAG}.bam.bai")),
-        samstats = os.path.join("results", addRG_dir, "samstats", "{SAMPLE}{MERGETAG}.tsv"),
+        bam = temp(os.path.join("results", addRG_dir, "bam", "{SAMPLE}{MERGETAG, .*}.bam")),
+        bamIndex = temp(os.path.join("results", addRG_dir, "bam", "{SAMPLE}{MERGETAG, .*}.bam.bai")),
+        samstats = os.path.join("results", addRG_dir, "samstats", "{SAMPLE}{MERGETAG, .*}.tsv"),
     # params:
     #     RGID = lambda wildcard: analysis.RGID[wildcard.SAMPLE],
     #     RGSM = lambda wildcard: analysis.RGSM[wildcard.SAMPLE],

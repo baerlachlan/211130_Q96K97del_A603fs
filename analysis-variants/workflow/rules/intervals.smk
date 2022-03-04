@@ -10,6 +10,6 @@ rule intervals:
         cpu = 1,
         ntasks = 1,
         mem_mb = 4000,
-        time = "00-00:30:00",
+        time = "00-00:10:00",
     script:
         "../scripts/intervals.R"
