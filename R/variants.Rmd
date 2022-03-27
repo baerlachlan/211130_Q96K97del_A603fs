@@ -51,6 +51,7 @@ suppressPackageStartupMessages({
   library(VariantAnnotation)
   library(Gviz)
   library(zoo)
+  library(msigdbr)
 })
 ```
 
@@ -270,6 +271,49 @@ lfc <- lapply(topDE, function(x){
 })
 ```
 
+### Gene sets
+
+Multiple gene set databases were accessed with the `msigdbr` package.
+
+```{r}
+entrezGenes <- genes %>%
+  as.data.frame() %>%
+  dplyr::filter(!is.na(entrezid)) %>%
+  mutate(entrezid = unAsIs(entrezid)) %>%
+  unnest(entrezid) %>%
+  dplyr::rename(entrez_gene = entrezid)
+```
+
+```{r}
+hm <- msigdbr("Danio rerio", category = "H") %>% 
+  left_join(entrezGenes) %>%
+  dplyr::filter(!is.na(gene_id)) %>%
+  distinct(gs_name, gene_id, .keep_all = TRUE)
+hmByGene <- hm %>%
+  split(f = .$gene_id) %>%
+  lapply(extract2, "gs_name")
+hmByID <- hm %>%
+  split(f = .$gs_name) %>%
+  lapply(extract2, "gene_id")
+```
+
+- The Hallmark gene sets consists of `r length(hmByID)` gene sets ranging from sizes of `r min(sapply(hmByID, length))` to `r max(sapply(hmByID, length))` genes.
+
+```{r}
+kg <- msigdbr("Danio rerio", category = "C2", subcategory = "CP:KEGG") %>%
+  left_join(entrezGenes) %>%
+  dplyr::filter(!is.na(gene_id)) %>%
+  distinct(gs_name, gene_id, .keep_all = TRUE)
+kgByGene <- kg %>%
+  split(f = .$gene_id) %>%
+  lapply(extract2, "gs_name")
+kgByID <- kg %>%
+  split(f = .$gs_name) %>%
+  lapply(extract2, "gene_id")
+```
+
+- The KEGG gene sets consists of `r length(kgByID)` gene sets ranging from sizes of `r min(sapply(kgByID, length))` to `r max(sapply(kgByID, length))` genes.
+
 ### Visualisation
 
 ```{r plot_alleleDiss}
@@ -330,8 +374,8 @@ plot_alleleDiss(
   title = paste0(
     "EOfAD-like vs WT",
     " - chr ", chr,
-    " - elastic dissimilarity window of ", diss_win, " SNVs",
-    " - elastic logFC window of ", lfc_win, " genes"
+    " - dissimilarity window of ", diss_win, " SNVs",
+    " - logFC window of ", lfc_win, " genes"
     )
 )
 ```
@@ -345,8 +389,23 @@ plot_alleleDiss(
   title = paste0(
     "MPS-IIIB vs WT",
     " - chr ", chr,
-    " - elastic dissimilarity window of ", diss_win, " SNVs",
-    " - elastic logFC window of ", lfc_win, " genes"
+    " - dissimilarity window of ", diss_win, " SNVs",
+    " - logFC window of ", lfc_win, " genes"
+    )
+)
+```
+
+```{r plot2}
+chr <- "24"
+plot_alleleDiss(
+  chr = chr, genes = genes[kgByID$KEGG_GLYCOSAMINOGLYCAN_BIOSYNTHESIS_HEPARAN_SULFATE],
+  diss = alleleDiss[[2]], diss_win = diss_win, diss_type = "l", diss_trans = 1/3,
+  lfc = lfc[[2]], lfc_win = lfc_win, lfc_type = "heatmap", lfc_trans = 1/3,
+  title = paste0(
+    "MPS-IIIB vs WT",
+    " - chr ", chr,
+    " - dissimilarity window of ", diss_win, " SNVs",
+    " - logFC window of ", lfc_win, " genes"
     )
 )
 ```
