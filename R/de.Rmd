@@ -65,16 +65,23 @@ cores <- availableCores() - 1
 source("~/bioinformatics/bioToolkit/lbFuncs.R")
 ```
 
-## Annotations
+## EnsDb
 
-```{r}
-ah <- AnnotationHub() %>%
-  subset(species == "Danio rerio") %>%
-  subset(rdataclass == "EnsDb")
-ensDb <- ah[["AH83189"]] ## Ens101
+```{r ensParams}
+ens_species <- "Danio rerio"
+ens_release <- "101"
+ens_assembly <- "GRCz11"
 ```
 
-```{r}
+```{r ensDb}
+ah <- AnnotationHub() %>%
+  subset(species == ens_species) %>%
+  subset(rdataclass == "EnsDb")
+ahId <- ah$ah_id[str_detect(ah$title, ens_release)]
+ensDb <- ah[[ahId]]
+```
+
+```{r transcripts}
 transcripts <- transcripts(ensDb)
 txLen <- exonsBy(ensDb, "tx") %>%
   width() %>%
@@ -87,7 +94,7 @@ mcols(transcripts) <- mcols(transcripts)[
   left_join(txLen)
 ```
 
-```{r}
+```{r geneGc}
 geneGc <- transcripts %>%
   mcols() %>%
   as_tibble() %>%
@@ -98,7 +105,7 @@ geneGc <- transcripts %>%
   )
 ```
 
-```{r}
+```{r genes}
 genes <- genes(ensDb)
 mcols(genes) <- mcols(genes)[
   c("gene_id", "gene_name", "gene_biotype", "entrezid")
@@ -111,9 +118,9 @@ An `EnsDb` object was obtained for Ensembl release 101 with the `AnnotationHub` 
 This contained the information required to set up gene and transcript annotations.
 Gene-level estimates of GC content and length were also generated which are required for assessing potential biases in downstream analysis.
 
-## Count data
+## Metadata
 
-```{r}
+```{r metadata}
 metadata <- read_csv(here("files/samples.csv")) %>%
   ## We need some sample aliases that follow R naming conventions
   mutate(
@@ -127,6 +134,9 @@ metadata <- read_csv(here("files/samples.csv")) %>%
   ) %>%
   dplyr::arrange(genotype) %>%
   dplyr::select(sample, genotype, alias, everything())
+```
+
+```{r genoCols}
 genoCols <- metadata$genotype %>%
   levels() %>%
   length() %>%
@@ -134,19 +144,22 @@ genoCols <- metadata$genotype %>%
   setNames(levels(metadata$genotype))
 ```
 
-```{r}
+## Counts
+
+```{r counts}
 counts <- read_tsv(here("analysis-de/results/04_counts/counts.out"), comment = "#") %>%
   dplyr::select(-c(Chr, Start, End, Strand, Length)) %>%
   set_colnames(basename(colnames(.))) %>%
   set_colnames(str_remove(colnames(.), "\\.bam"))
 ```
 
-```{r}
+```{r dgeList}
 minLib <- counts %>%
   dplyr::select(-Geneid) %>%
   colSums() %>%
   min()
-minCPM <- as.vector(cpm(10, lib.size = minLib))
+# minCPM <- as.vector(cpm(10, lib.size = minLib))
+minCPM <- 1
 minSamples <- metadata %>%
   group_by(genotype) %>%
   summarise(n = n()) %>%
@@ -164,6 +177,13 @@ dgeList <- counts %>%
       dplyr::select(chromosome = seqnames, everything())
   ) %>%
   calcNormFactors()
+```
+
+```{r save_dgeList}
+dgeList_path <- here("files/dgeList.Rds")
+if (!file.exists(dgeList_path)) {
+  saveRDS(dgeList, dgeList_path)
+}
 ```
 
 Gene-level count data was loaded from `featureCounts` and imported into `R` as a `DGEList` object.

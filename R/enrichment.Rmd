@@ -5,15 +5,14 @@ author: "Lachlan Baer"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
-    theme: flatly
     toc: true
     toc_float: true
-    toc_depth: 4
+    toc_depth: 3
     fig_width: 8
     fig_height: 6
     fig_align: "center"
     code_folding: hide
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
@@ -22,13 +21,13 @@ knitr::opts_chunk$set(
   echo = TRUE,
   message = FALSE,
   warning = FALSE,
-  error = FALSE, 
+  error = FALSE,
   fig.align = "center"
 )
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
-# Setup 
+# Setup
 
 ```{r packages}
 suppressPackageStartupMessages({
@@ -48,7 +47,13 @@ suppressPackageStartupMessages({
   library(pander)
   library(rmarkdown)
   ## Project specific
-  
+  library(edgeR)
+  library(limma)
+  library(pheatmap)
+  library(cqn)
+  library(DT)
+  library(htmltools)
+  library(msigdbr)
 })
 ```
 
@@ -58,35 +63,80 @@ theme_set(theme_bw())
 cores <- availableCores() - 1
 ```
 
-```{r funcs}
+```{r}
 source("~/bioinformatics/bioToolkit/lbFuncs.R")
 ```
 
-```{r projDir}
-## Choose either local or remote project directory
-# projDir <- here()
-projDir <- "/hpcfs/users/a1647910/211130_Q96K97del_A603fs"
+## Annotations
+
+```{r ensParams}
+ens_species <- "Danio rerio"
+ens_release <- "101"
+ens_assembly <- "GRCz11"
 ```
 
-## EnsDb
-
-```{r drChrs}
-drChrs <- seq(1:25)
-```
-
-```{r ah}
+```{r ensDb}
 ah <- AnnotationHub() %>%
-  subset(species == "Danio rerio") %>%
+  subset(species == ens_species) %>%
   subset(rdataclass == "EnsDb")
-ensDb <- ah[["AH83189"]] ## Ens101
-genes <- genes(ensDb, filter = SeqNameFilter(drChrs))
-mcols(genes) <- mcols(genes)[
-  c("gene_id", "gene_name", "gene_biotype", "entrezid")
-]
-exons <- exonsBy(ensDb, by = "gene", filter = SeqNameFilter(drChrs))
+ahId <- ah$ah_id[str_detect(ah$title, ens_release)]
+ensDb <- ah[[ahId]]
 ```
 
-An `EnsDb` object for Ensembl release 101 was accessed and gene and exon annotation information was extracted.
+```{r chrInfo}
+chrInfo <- getChromInfoFromEnsembl(ens_assembly, release = ens_release) %>%
+  dplyr::filter(coord_system == "chromosome")
+primary_chrs <- chrInfo$name
+```
+
+```{r transcripts}
+transcripts <- transcripts(ensDb, filter = SeqNameFilter(primary_chrs))
+txLen <- exonsBy(ensDb, "tx", filter = SeqNameFilter(primary_chrs)) %>%
+  width() %>%
+  vapply(sum, integer(1))
+mcols(transcripts) <- mcols(transcripts)[
+  c("tx_id", "gene_id", "gc_content")
+] %>%
+  as.data.frame() %>%
+  mutate(length = txLen)
+```
+
+```{r geneGc}
+geneGc <- transcripts %>%
+  mcols() %>%
+  as_tibble() %>%
+  group_by(gene_id) %>%
+  summarise(
+    gc_content = sum(gc_content*length) / sum(length),
+    length = ceiling(median(length))
+  )
+```
+
+```{r genes}
+genes <- genes(ensDb, filter = SeqNameFilter(primary_chrs)) %>%
+  .[,c("gene_id", "gene_name", "gene_biotype", "entrezid")] %>%
+  as_tibble() %>%
+  left_join(geneGc) %>%
+  GRanges()
+```
+
+An `EnsDb` object was obtained for Ensembl release 101 with the `AnnotationHub` package.
+This contained the information required to set up gene and transcript annotations.
+Gene-level estimates of GC content and length were also generated which may be required as covariates in suitable analyses.
+
+```{r entrezGenes}
+entrezGenes <- genes %>%
+  as.data.frame() %>%
+  dplyr::filter(!is.na(entrezid)) %>%
+  mutate(entrezid = unAsIs(entrezid)) %>%
+  unnest(entrezid) %>%
+  dplyr::rename(entrez_gene = entrezid)
+```
+
+```{r geneChrs}
+geneChrs <- as_tibble(genes) %>%
+  dplyr::select(gene_id, chromosome = seqnames)
+```
 
 ## Metadata
 
@@ -104,12 +154,14 @@ metadata <- read_csv(here("files/samples.csv")) %>%
   ) %>%
   dplyr::arrange(genotype) %>%
   dplyr::select(sample, genotype, alias, everything())
+```
+
+```{r genoCols}
 genoCols <- metadata$genotype %>%
   levels() %>%
   length() %>%
   brewer.pal("Set1") %>%
   setNames(levels(metadata$genotype))
-compCols <- genoCols[2:3]
 ```
 
 ```{r samples_byGeno}
@@ -120,12 +172,371 @@ samples_byGeno <- metadata %>%
   }, simplify = FALSE)
 ```
 
-# DE data
+## Differential expression data
 
-```{r deData}
-topDE <- readRDS(here("files/topTables.Rds"))
+```{r dgeList}
+dgeList <- readRDS(here("files/dgeList.Rds"))
+```
+
+```{r design}
+design <- model.matrix(~0 + group, data = dgeList$samples) %>%
+  set_colnames(c("WT", "EOfAD", "MPSIIIB"))
+```
+
+```{r contrasts}
+contrasts <- makeContrasts(
+  EOfADvsWT = EOfAD - WT,
+  MPSvsWT = MPSIIIB - WT,
+  levels = colnames(design)
+)
+```
+
+```{r topTables}
+topTables <- readRDS(here("files/topTables.Rds")) %>%
+  set_names(c("EOfADvsWT", "MPSvsWT"))
 ```
 
 ```{r deGenes}
-deGenes <- sapply(topDE, dplyr::filter, DE, simplify = FALSE)
+deGenes <- lapply(topTables, function(tt){
+  dplyr::filter(tt, DE) %>%
+    pull(gene_id)
+}) 
+```
+
+## Variant data
+
+```{r diss_winRanges}
+diss_winRanges <- readRDS(here("files/diss_winRanges.Rds"))
+```
+
+# Gene sets
+
+Multiple gene set databases were accessed with the `msigdbr` package.
+For this analysis the Hallmark, KEGG, Wikipathways and chromosomal based gene sets were chosen.
+
+```{r hm}
+hm <- msigdbr(ens_species, category = "H") %>%
+  left_join(entrezGenes) %>%
+  dplyr::filter(!is.na(gene_id)) %>%
+  distinct(gs_name, gene_id, .keep_all = TRUE) %>%
+  mutate(gs_name = str_remove(gs_name, "^HALLMARK_"))
+hmByGene <- hm %>%
+  split(f = .$gene_id) %>%
+  lapply(extract2, "gs_name")
+hmByID <- hm %>%
+  split(f = .$gs_name) %>%
+  lapply(extract2, "gene_id")
+```
+
+- The Hallmark gene sets consists of `r length(hmByID)` gene sets ranging from sizes of `r min(sapply(hmByID, length))` to `r max(sapply(hmByID, length))` genes.
+
+```{r kg}
+kg <- msigdbr(ens_species, category = "C2", subcategory = "CP:KEGG") %>%
+  left_join(entrezGenes) %>%
+  dplyr::filter(!is.na(gene_id)) %>%
+  distinct(gs_name, gene_id, .keep_all = TRUE) %>%
+  mutate(gs_name = str_remove(gs_name, "^KEGG_"))
+kgByGene <- kg %>%
+  split(f = .$gene_id) %>%
+  lapply(extract2, "gs_name")
+kgByID <- kg %>%
+  split(f = .$gs_name) %>%
+  lapply(extract2, "gene_id")
+```
+
+- The KEGG gene sets consists of `r length(kgByID)` gene sets ranging from sizes of `r min(sapply(kgByID, length))` to `r max(sapply(kgByID, length))` genes.
+
+```{r wk}
+wk <- msigdbr(ens_species, category = "C2", subcategory = "CP:WIKIPATHWAYS") %>%
+  left_join(entrezGenes) %>%
+  dplyr::filter(!is.na(gene_id)) %>%
+  distinct(gs_name, gene_id, .keep_all = TRUE) %>%
+  mutate(gs_name = str_remove(gs_name, "^WP_"))
+wkByGene <- wk %>%
+  split(f = .$gene_id) %>%
+  lapply(extract2, "gs_name")
+wkByID <- wk %>%
+  split(f = .$gs_name) %>%
+  lapply(extract2, "gene_id")
+```
+
+- The Wikipathways gene sets consists of `r length(wkByID)` gene sets ranging from sizes of `r min(sapply(wkByID, length))` to `r max(sapply(wkByID, length))` genes.
+
+# Enrichment testing {.tabset}
+
+## Hallmark {.tabset .tabset-pills}
+
+```{r hm_fry}
+hm_fry <- contrasts %>%
+  apply(MARGIN = 2, function(contrast){
+    cpm(dgeList$counts, log = TRUE) %>%
+      fry(
+        index = hmByID,
+        design = design,
+        contrast = contrast,
+        sort = "mixed"
+      ) %>%
+      rownames_to_column("Pathway") %>%
+      as_tibble() %>%
+      mutate(
+        Pathway = str_trunc(Pathway, width = 18),
+        PValue = formatC(PValue, digits = 1, format = "e"),
+        FDR = formatC(FDR, digits = 1, format = "e"),
+        PValue.Mixed = formatC(PValue.Mixed, digits = 1, format = "e"),
+        FDR.Mixed = formatC(FDR.Mixed, digits = 1, format = "e"),
+      )
+  })
+```
+
+### EOfAD vs WT
+
+```{r}
+datatable(hm_fry[[1]])
+```
+
+### MPS-IIIB vs WT
+
+```{r}
+datatable(hm_fry[[2]])
+```
+
+## KEGG {.tabset .tabset-pills}
+
+```{r kg_fry}
+kg_fry <- contrasts %>%
+  apply(MARGIN = 2, function(contrast){
+    cpm(dgeList$counts, log = TRUE) %>%
+      fry(
+        index = kgByID,
+        design = design,
+        contrast = contrast,
+        sort = "mixed"
+      ) %>%
+      rownames_to_column("Pathway") %>%
+      as_tibble() %>%
+      mutate(
+        Pathway = str_trunc(Pathway, width = 18),
+        PValue = formatC(PValue, digits = 1, format = "e"),
+        FDR = formatC(FDR, digits = 1, format = "e"),
+        PValue.Mixed = formatC(PValue.Mixed, digits = 1, format = "e"),
+        FDR.Mixed = formatC(FDR.Mixed, digits = 1, format = "e"),
+      )
+  })
+```
+
+### EOfAD vs WT
+
+```{r}
+datatable(kg_fry[[1]])
+```
+
+### MPS-IIIB vs WT
+
+```{r}
+datatable(kg_fry[[2]])
+```
+
+## Wikipathways {.tabset .tabset-pills}
+
+```{r wk_fry}
+wk_fry <- contrasts %>%
+  apply(MARGIN = 2, function(contrast){
+    cpm(dgeList$counts, log = TRUE) %>%
+      fry(
+        index = wkByID,
+        design = design,
+        contrast = contrast,
+        sort = "mixed"
+      ) %>%
+      rownames_to_column("Pathway") %>%
+      as_tibble() %>%
+      mutate(
+        Pathway = str_trunc(Pathway, width = 18),
+        PValue = formatC(PValue, digits = 1, format = "e"),
+        FDR = formatC(FDR, digits = 1, format = "e"),
+        PValue.Mixed = formatC(PValue.Mixed, digits = 1, format = "e"),
+        FDR.Mixed = formatC(FDR.Mixed, digits = 1, format = "e"),
+      )
+  })
+```
+
+### EOfAD vs WT
+
+```{r}
+datatable(wk_fry[[1]])
+```
+
+### MPS-IIIB vs WT
+
+```{r}
+datatable(wk_fry[[2]])
+```
+
+# eQTL bias removal {.tabset}
+
+```{r genes_diss_path}
+genes_diss_path <- here("files/genes_diss.Rds")
+```
+
+```{r genes_diss}
+## Takes 5 mins to run so .Rds saved for convenience
+if (!file.exists(genes_diss_path)) {
+  genes_diss <- lapply(diss_winRanges, function(winRanges){
+    overlaps <- findOverlaps(GRanges(dgeList$genes), winRanges)
+    lapply(unique(queryHits(overlaps)), function(query){
+      subjects <- subjectHits(overlaps)[queryHits(overlaps) == query]
+      diss <- winRanges$diss_rollmean[subjects] %>%
+        mean()
+      dgeList$genes[query,] %>%
+        mutate(diss = diss)
+    }) %>%
+      bind_rows() %>%
+      GRanges()
+  })
+  saveRDS(genes_diss, genes_diss_path)
+} else {
+  genes_diss <- readRDS(genes_diss_path)
+}
+```
+
+```{r diss_threshold}
+diss_threshold <- 0.5
+```
+
+```{r}
+genes_removed <- lapply(genes_diss, function(geneDiss){
+  geneDiss %>%
+    as_tibble() %>%
+    dplyr::filter(diss > diss_threshold) %>%
+    pull(gene_id)
+})
+```
+
+## Hallmark {.tabset .tabset-pills}
+
+```{r hm_fry_eqtl}
+hm_fry_eqtl <- colnames(contrasts) %>%
+  sapply(function(cont){
+    biased_genes <- genes_diss[[cont]] %>%
+      as_tibble() %>%
+      dplyr::filter(diss > diss_threshold) %>%
+      pull(gene_id)
+    cpm(
+      dgeList$counts[!(rownames(dgeList$counts) %in% biased_genes),],
+      log = TRUE
+    ) %>%
+      fry(
+        index = hmByID,
+        design = design,
+        contrast = contrasts[,cont],
+        sort = "mixed"
+      ) %>%
+      rownames_to_column("Pathway") %>%
+      as_tibble() %>%
+      mutate(
+        Pathway = str_trunc(Pathway, width = 18),
+        PValue = formatC(PValue, digits = 1, format = "e"),
+        FDR = formatC(FDR, digits = 1, format = "e"),
+        PValue.Mixed = formatC(PValue.Mixed, digits = 1, format = "e"),
+        FDR.Mixed = formatC(FDR.Mixed, digits = 1, format = "e"),
+      )
+  }, simplify = FALSE)
+```
+
+### EOfAD vs WT
+
+```{r}
+datatable(hm_fry_eqtl[[1]])
+```
+
+### MPS-IIIB vs WT
+
+```{r}
+datatable(hm_fry_eqtl[[2]])
+```
+
+## KEGG {.tabset .tabset-pills}
+
+```{r kg_fry_eqtl}
+kg_fry_eqtl <- colnames(contrasts) %>%
+  sapply(function(cont){
+    biased_genes <- genes_diss[[cont]] %>%
+      as_tibble() %>%
+      dplyr::filter(diss > diss_threshold) %>%
+      pull(gene_id)
+    cpm(
+      dgeList$counts[!(rownames(dgeList$counts) %in% biased_genes),],
+      log = TRUE
+    ) %>%
+      fry(
+        index = kgByID,
+        design = design,
+        contrast = contrasts[,cont],
+        sort = "mixed"
+      ) %>%
+      rownames_to_column("Pathway") %>%
+      as_tibble() %>%
+      mutate(
+        Pathway = str_trunc(Pathway, width = 18),
+        PValue = formatC(PValue, digits = 1, format = "e"),
+        FDR = formatC(FDR, digits = 1, format = "e"),
+        PValue.Mixed = formatC(PValue.Mixed, digits = 1, format = "e"),
+        FDR.Mixed = formatC(FDR.Mixed, digits = 1, format = "e"),
+      )
+  }, simplify = FALSE)
+```
+
+### EOfAD vs WT
+
+```{r}
+datatable(kg_fry_eqtl[[1]])
+```
+
+### MPS-IIIB vs WT
+
+```{r}
+datatable(kg_fry_eqtl[[2]])
+```
+
+## Wikipathways {.tabset .tabset-pills}
+
+```{r wk_fry_eqtl}
+wk_fry_eqtl <- colnames(contrasts) %>%
+  sapply(function(cont){
+    biased_genes <- genes_diss[[cont]] %>%
+      as_tibble() %>%
+      dplyr::filter(diss > 0.5) %>%
+      pull(gene_id)
+    cpm(
+      dgeList$counts[!(rownames(dgeList$counts) %in% biased_genes),],
+      log = TRUE
+    ) %>%
+      fry(
+        index = wkByID,
+        design = design,
+        contrast = contrasts[,cont],
+        sort = "mixed"
+      ) %>%
+      rownames_to_column("Pathway") %>%
+      as_tibble() %>%
+      mutate(
+        Pathway = str_trunc(Pathway, width = 18),
+        PValue = formatC(PValue, digits = 1, format = "e"),
+        FDR = formatC(FDR, digits = 1, format = "e"),
+        PValue.Mixed = formatC(PValue.Mixed, digits = 1, format = "e"),
+        FDR.Mixed = formatC(FDR.Mixed, digits = 1, format = "e"),
+      )
+  }, simplify = FALSE)
+```
+
+### EOfAD vs WT
+
+```{r}
+datatable(wk_fry_eqtl[[1]])
+```
+
+### MPS-IIIB vs WT
+
+```{r}
+datatable(wk_fry_eqtl[[2]])
 ```
