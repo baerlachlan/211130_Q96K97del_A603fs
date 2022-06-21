@@ -52,6 +52,7 @@ suppressPackageStartupMessages({
   library(cqn)
   library(DT)
   library(htmltools)
+  library(gtools)
 })
 ```
 
@@ -81,9 +82,22 @@ ahId <- ah$ah_id[str_detect(ah$title, ens_release)]
 ensDb <- ah[[ahId]]
 ```
 
+```{r chrInfo}
+chrInfo <- getChromInfoFromEnsembl(ens_assembly, release = ens_release) %>%
+  dplyr::filter(coord_system == "chromosome")
+## Sort by numbers then letters
+primary_chrs <- chrInfo$name %>%
+  mixedsort()
+## Push MT chr to end
+primary_chrs <- c(
+  primary_chrs[primary_chrs != "MT"],
+  primary_chrs[primary_chrs == "MT"]
+)
+```
+
 ```{r transcripts}
-transcripts <- transcripts(ensDb)
-txLen <- exonsBy(ensDb, "tx") %>%
+transcripts <- transcripts(ensDb, filter = SeqNameFilter(primary_chrs))
+txLen <- exonsBy(ensDb, "tx", filter = SeqNameFilter(primary_chrs)) %>%
   width() %>%
   vapply(sum, integer(1)) %>%
   enframe(name = "tx_id", value = "length")
@@ -106,7 +120,7 @@ geneGc <- transcripts %>%
 ```
 
 ```{r genes}
-genes <- genes(ensDb)
+genes <- genes(ensDb, filter = SeqNameFilter(primary_chrs))
 mcols(genes) <- mcols(genes)[
   c("gene_id", "gene_name", "gene_biotype", "entrezid")
 ] %>%
@@ -174,7 +188,8 @@ dgeList <- counts %>%
       left_join(metadata),
     genes = genes[rownames(.),] %>%
       as_tibble() %>%
-      dplyr::select(chromosome = seqnames, everything())
+      dplyr::select(chromosome = seqnames, everything()) %>%
+      mutate(chromosome = factor(chromosome, levels = primary_chrs))
   ) %>%
   calcNormFactors()
 ```
@@ -383,7 +398,7 @@ topTables %>%
   ggplot(aes(gc_content, stat)) +
   geom_point(aes(colour = DE), alpha = 0.4) +
   geom_smooth(se = FALSE) +
-  facet_wrap(~coef)  +
+  facet_wrap(~coef) +
   geom_text_repel(
     aes(label = gene_name, colour = DE),
     data = . %>% dplyr::filter(DE)
@@ -758,6 +773,53 @@ cpm[deGenes[[2]],] %>%
 
 ```{r, fig.height=20, fig.cap="*logCPM boxplots between comparative groups for genes classified as DE.*"}
 deCpmPlots[[2]]
+```
+
+```{r}
+manPlots <- lapply(topTables_cqn, function(topTable){
+  man <- topTable %>%
+    mutate(mid = (start + end) / 2) %>%
+    dplyr::select(gene_id, gene_name, chromosome, mid, FDR) %>%
+    group_by(chromosome) %>%
+    summarise(chrLen = max(mid)) %>%
+    mutate(chrSt = cumsum(chrLen)-chrLen) %>%
+    dplyr::select(-chrLen) %>% 
+    left_join(topTable) %>%
+    mutate(mid = (start + end) / 2) %>%
+    mutate(midCum = chrSt + mid) %>%
+    mutate(
+      colour = ifelse(chromosome %in% primary_chrs[c(TRUE, FALSE)], "a", "b"),
+      colour = ifelse(chromosome == "7", "c", colour)
+    )
+  axis <- man %>%
+    group_by(chromosome) %>%
+    summarise(center = (max(midCum) + min(midCum)) / 2)
+  ggplot(man, aes(x = midCum, y = -log10(PValue))) +
+    geom_point(aes(colour = colour, fill = chromosome, shape = DE), alpha = 1, size = 2) +
+    scale_color_manual(values = c("grey50", "grey70", "red")) +
+    scale_shape_manual(values = c(20, 17)) +
+    scale_x_continuous(label = axis$chromosome, breaks = axis$center) +
+    scale_y_continuous(expand = c(0, 0)) +
+    coord_cartesian(clip = "off") +
+    labs(
+      # title = paste0(unique(topTable$contrast)),
+      x = "Chromosome",
+      y = expression(paste(-log[10], "(p)"))
+    ) +
+    # geom_text_repel(
+    #   data = dplyr::filter(man, DE),
+    #   aes(label = gene_name, colour = colour),
+    #   size = 2.5,
+    #   max.overlaps = 50
+    # ) +
+    theme(
+      legend.position="none",
+      panel.border = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank()
+    )
+})
+manPlots
 ```
 
 ## Data export
