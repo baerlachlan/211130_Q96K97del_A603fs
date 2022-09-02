@@ -296,6 +296,8 @@ allele_props <- lapply(allele_stats, function(stats){
 
 ```{r allele_dist}
 dist_winSize <- 11
+allele_dist_path <- here("files", "allele_dist.Rds")
+if (!file.exists(allele_dist_path)) {
 allele_dist <- lapply(
   list(
     allele_props[c("EOfAD-like", "WT")],
@@ -332,6 +334,10 @@ allele_dist <- lapply(
   }
 ) %>%
   set_names(c("EOfADvsWT", "MPSvsWT"))
+saveRDS(allele_dist, allele_dist_path) 
+} else {
+  allele_dist <- readRDS(allele_dist_path)
+}
 ```
 
 ### Elastic window sizes
@@ -513,7 +519,7 @@ plot_allele_dist <- function(
 ```
 
 ```{r distPlot1}
-chr <- "17"
+chr <- "25"
 ind <- 1
 plot_allele_dist(
   chr = chr,
@@ -530,7 +536,7 @@ plot_allele_dist(
 ```
 
 ```{r distPlot2}
-chr <- "25"
+chr <- "24"
 ind <- 2
 plot_allele_dist(
   chr = chr,

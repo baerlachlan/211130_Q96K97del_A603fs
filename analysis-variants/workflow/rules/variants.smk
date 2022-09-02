@@ -80,7 +80,8 @@ rule variants_genomicsDB:
                 --intervals {input.intervals} \
                 --sample-name-map {input.sample_map} \
                 --tmp-dir . \
-                --merge-input-intervals
+                --merge-input-intervals \
+                --genomicsdb-vcf-buffer-size 256000000
         """
 
 rule variants_genotype:
