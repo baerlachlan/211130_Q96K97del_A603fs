@@ -11,7 +11,7 @@ output:
     fig_height: 6
     fig_align: "center"
     code_folding: hide
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
@@ -20,13 +20,13 @@ knitr::opts_chunk$set(
   echo = TRUE,
   message = FALSE,
   warning = FALSE,
-  error = FALSE, 
+  error = FALSE,
   fig.align = "center"
 )
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
-# Setup 
+# Setup
 
 ```{r packages}
 suppressPackageStartupMessages({
@@ -128,7 +128,7 @@ mcols(genes) <- mcols(genes)[
   left_join(geneGc)
 ```
 
-An `EnsDb` object was obtained for Ensembl release 101 with the `AnnotationHub` package.
+An `EnsDb` object was obtained for Ensembl release `r ens_release` with the `AnnotationHub` package.
 This contained the information required to set up gene and transcript annotations.
 Gene-level estimates of GC content and length were also generated which are required for assessing potential biases in downstream analysis.
 
@@ -168,10 +168,10 @@ counts <- read_tsv(here("analysis-de/results/04_counts/counts.out"), comment = "
 ```
 
 ```{r dgeList}
-minLib <- counts %>%
-  dplyr::select(-Geneid) %>%
-  colSums() %>%
-  min()
+# minLib <- counts %>%
+#   dplyr::select(-Geneid) %>%
+#   colSums() %>%
+#   min()
 # minCPM <- as.vector(cpm(10, lib.size = minLib))
 minCPM <- 1
 minSamples <- metadata %>%
@@ -238,7 +238,7 @@ cpm <- dgeList %>%
 ```{r}
 pca <- cpm %>%
   t() %>%
-  prcomp() 
+  prcomp()
 pcaVars <- percent_format(0.1)(summary(pca)$importance["Proportion of Variance",])
 ```
 
@@ -277,9 +277,9 @@ design <- model.matrix(~genotype, data = dgeList$samples) %>%
 
 ```{r, fig.height=6, fig.width=6, fig.cap = "*Visualisation of the design matrix*"}
 pheatmap(
-  design[metadata$sample,], 
-  cluster_cols = FALSE, 
-  cluster_rows = FALSE, 
+  design[metadata$sample,],
+  cluster_cols = FALSE,
+  cluster_rows = FALSE,
   color = c("white", "grey50"),
   annotation_row = dgeList$samples["genotype"],
   annotation_colors = list(genotype = genoCols),
@@ -308,7 +308,7 @@ topTables <- colnames(design)[2:3] %>%
       as_tibble() %>%
       arrange(PValue) %>%
       dplyr::select(
-        gene_id, gene_name, logFC, logCPM, PValue, FDR, everything()  
+        gene_id, gene_name, logFC, logCPM, PValue, FDR, everything()
       ) %>%
       mutate(
         coef = x,
@@ -322,7 +322,7 @@ With this criteria, the following genes were classified as DE:
 
 ```{r}
 topTables$`EOfAD-like` %>%
-  dplyr::filter(DE) %>% 
+  dplyr::filter(DE) %>%
   dplyr::select(gene_id, gene_name, chromosome, logFC, logCPM, PValue, FDR, bonfP) %>%
   mutate(
     logCPM = formatC(logCPM, digits = 2, format = "f"),
@@ -342,7 +342,7 @@ topTables$`EOfAD-like` %>%
     bootstrap_options = c("striped", "hover", "condensed", "responsive")
   )
 topTables$`MPS-IIIB` %>%
-  dplyr::filter(DE) %>% 
+  dplyr::filter(DE) %>%
   dplyr::select(gene_id, gene_name, chromosome, logFC, logCPM, PValue, FDR, bonfP) %>%
   mutate(
     logCPM = formatC(logCPM, digits = 2, format = "f"),
@@ -486,7 +486,7 @@ cpm_cqn <- cqn %>%
 ```{r}
 pca_cqn <- cpm_cqn %>%
   t() %>%
-  prcomp() 
+  prcomp()
 pcaVars <- percent_format(0.1)(summary(pca_cqn)$importance["Proportion of Variance",])
 ```
 
@@ -527,7 +527,7 @@ topTables_cqn <- colnames(design)[2:3] %>%
       as_tibble() %>%
       arrange(PValue) %>%
       dplyr::select(
-        gene_id, gene_name, logFC, logCPM, PValue, FDR, everything()  
+        gene_id, gene_name, logFC, logCPM, PValue, FDR, everything()
       ) %>%
       mutate(
         coef = x,
@@ -539,7 +539,7 @@ topTables_cqn <- colnames(design)[2:3] %>%
 
 ```{r}
 topTables_cqn$`EOfAD-like` %>%
-  dplyr::filter(DE) %>% 
+  dplyr::filter(DE) %>%
   dplyr::select(gene_id, gene_name, chromosome, logFC, logCPM, PValue, FDR, bonfP) %>%
   mutate(
     logCPM = formatC(logCPM, digits = 2, format = "f"),
@@ -559,7 +559,7 @@ topTables_cqn$`EOfAD-like` %>%
     bootstrap_options = c("striped", "hover", "condensed", "responsive")
   )
 topTables_cqn$`MPS-IIIB` %>%
-  dplyr::filter(DE) %>% 
+  dplyr::filter(DE) %>%
   dplyr::select(gene_id, gene_name, chromosome, logFC, logCPM, PValue, FDR, bonfP) %>%
   mutate(
     logCPM = formatC(logCPM, digits = 2, format = "f"),
@@ -676,7 +676,7 @@ topTables_chosen %>%
   scale_x_continuous(breaks = seq(-8, 8, by = 2)) +
   coord_cartesian(ylim = c(0, 10)) +
   labs(y = log10plab) +
-  theme(legend.position = "none") 
+  theme(legend.position = "none")
 ```
 
 ```{r}
@@ -701,10 +701,10 @@ deGenes <- lapply(topTables_chosen, function(x){
 })
 deCpmPlots <- map2(deGenes, comp_samples, function(genes, samples){
   if (length(genes)) {
-    cpms <- cpm[genes,] %>% 
-      as.data.frame() %>% 
-      rownames_to_column("gene_id") %>% 
-      gather(key = "sample", value = logCPM, -gene_id) %>% 
+    cpms <- cpm[genes,] %>%
+      as.data.frame() %>%
+      rownames_to_column("gene_id") %>%
+      gather(key = "sample", value = logCPM, -gene_id) %>%
       as_tibble() %>%
       left_join(metadata[,c("sample", "genotype")])
     dplyr::filter(cpms, sample %in% samples) %>%

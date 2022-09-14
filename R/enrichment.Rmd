@@ -257,6 +257,111 @@ wkByID <- wk %>%
 
 - The Wikipathways gene sets consists of `r length(wkByID)` gene sets ranging from sizes of `r min(sapply(wkByID, length))` to `r max(sapply(wkByID, length))` genes.
 
+# Fisher's exact test for clustering
+
+## Chromosome clustering
+
+```{r}
+fisherClust_mps <- sapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
+  table(
+    topTables$MPSvsWT$DE,
+    topTables$MPSvsWT$chromosome == chr
+  ) %>%
+    fisher.test()
+}, simplify = FALSE) %>%
+  .[as.character(sort(as.numeric(names(.)), ))]
+```
+
+```{r}
+lapply(fisherClust_mps, function(fisherRes){
+  fisherRes$p.value
+}) %>%
+  unlist() %>%
+  enframe(name = "chr", value = "p") %>%
+  mutate(
+    bonf = p.adjust(p, method = "bonf"),
+    sig = bonf < 0.05,
+    p = formatC(p, format = "e", digits = 2),
+    bonf = formatC(bonf, format = "e", digits = 2),
+  ) %>%
+  print(n = Inf)
+```
+
+## Regional clustering
+
+```{r}
+region_size <- 1e6
+```
+
+```{r}
+regionsFwd_mps <- sapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
+  length <- chrInfo$length[chrInfo$name == chr]
+  starts <- seq(1, length, by = region_size)
+  # Remove last start as this is actually an end
+  starts <- starts[-length(starts)]
+  lapply(starts, function(start){
+    GRanges(
+      seqnames = chr,
+      ranges = IRanges(start = start, end = (start + region_size - 1))
+    )
+  }) %>%
+    set_names(paste0(
+      "chr",
+      chr,
+      ":",
+      starts, "-" , 
+      formatC(starts + region_size - 1, format = "d")
+    ))
+}, simplify = FALSE) %>%
+  .[as.character(sort(as.numeric(names(.)), ))] %>%
+  flatten()
+```
+
+```{r}
+regionGenesFwd_mps <- sapply(regionsFwd_mps, function(region){
+  subsetByOverlaps(genes, region)$gene_id
+}, simplify = FALSE)
+```
+
+```{r}
+clustRegionFwd_mps <- sapply(regionGenesFwd_mps, function(regionGenes){
+  tt <- topTables$MPSvsWT %>%
+    mutate(inRegion = gene_id %in% regionGenes)
+  # Will throw an error if no genes in region
+  if (sum(tt$inRegion) > 0) {
+    table(
+      tt$DE,
+      tt$inRegion
+    ) %>%
+      fisher.test()
+  }
+}, simplify = FALSE)
+```
+
+```{r}
+sapply(clustRegionFwd_mps, function(fisherRes){
+  if (length(fisherRes)) {
+    fisherRes$p.value
+  } else {
+    return(1)
+  }
+}, simplify = FALSE) %>%
+  unlist() %>%
+  enframe(name = "region", value = "p") %>%
+  mutate(
+    bonf = p.adjust(p, method = "bonf"),
+    sig = bonf < 0.05,
+    p = formatC(p, format = "e", digits = 2),
+    bonf = formatC(bonf, format = "e", digits = 2),
+  ) %>%
+  dplyr::filter(sig) %>%
+  print(n = Inf)
+```
+
+```{r}
+genes[genes$gene_name == "naglu"]
+```
+
 # Enrichment testing {.tabset}
 
 ## Hallmark {.tabset .tabset-pills}
@@ -373,27 +478,8 @@ datatable(wk_fry[[2]])
 dist_winRanges <- readRDS(here("files/dist_winRanges.Rds"))
 ```
 
-```{r genes_diversity}
-## Takes ~5 mins to run so .Rds saved for convenience
-## Note a few genes are lost that do not fall within a diversity range
-genes_diversity_path <- here("files/genes_diversity.Rds")
-if (!file.exists(genes_diversity_path)) {
-  genes_diversity <- lapply(dist_winRanges, function(winRanges){
-    overlaps <- findOverlaps(GRanges(dgeList$genes), winRanges)
-    lapply(unique(queryHits(overlaps)), function(query){
-      subjects <- subjectHits(overlaps)[queryHits(overlaps) == query]
-      diversity <- winRanges$diversity[subjects] %>%
-        mean()
-      dgeList$genes[query,] %>%
-        mutate(diversity = diversity)
-    }) %>%
-      bind_rows() %>%
-      GRanges()
-  })
-  saveRDS(genes_diversity, genes_diversity_path)
-} else {
-  genes_diversity <- readRDS(genes_diversity_path)
-}
+```{r}
+genes_diversity <- readRDS(here("files/genes_diversity.Rds"))
 ```
 
 ```{r}
@@ -1638,3 +1724,28 @@ lapply(seq_along(ttdiv), function(x){
   facet_wrap(~contrast, ncol = 1)
 ```
 
+# Localised enrichment
+
+First split our genes into `r region_size / 1e6`Mbp regions.
+Do this from both ends of the chromosome.
+
+```{r}
+# regionsFwd_mps <- 
+# chrInfo %>%
+#   dplyr::filter(name != "MT") %>%
+#   with(setNames(length, paste0("chr", name))) %>%
+#   lapply(function(length){
+#     seq(from = 1, to = length, by = region_size) %>%
+#       lapply(function(start){
+#         IRanges(start = start, end = start + region_size - 1, width = region_size)
+#       })
+#   })
+
+lapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
+  length <- chrInfo$length[chrInfo$name == chr]
+  starts <- seq(1, length, by = region_size)
+  lapply(starts, function(start){
+    genes %>%
+  })
+})
+```
