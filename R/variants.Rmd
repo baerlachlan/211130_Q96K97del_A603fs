@@ -136,6 +136,10 @@ samples_byGroup <- metadata %>%
 
 # DE data
 
+```{r}
+dgeList <- readRDS(here("files/dgeList.Rds"))
+```
+
 ```{r deData}
 topDE <- readRDS(here("files/topTables.Rds")) %>%
   sapply(function(x){
@@ -340,6 +344,41 @@ saveRDS(allele_dist, allele_dist_path)
 }
 ```
 
+### DAR distribution
+
+```{r}
+map2(seq_along(allele_dist), c("17", "24"), function(ind, mut_chr){
+  allele_dist[[ind]] %>%
+    split(seqnames(.)) %>%
+    lapply(function(chr){
+      tibble(
+        chromosome = as.vector(seqnames(chr)),
+        div = chr$diversity
+      )
+    }) %>%
+    purrr::reduce(rbind) %>%
+    mutate(
+      chromosome = factor(
+        chromosome,
+        # Draw mutant chr on top
+        levels = unique(c(
+          chromosome[chromosome != mut_chr],
+          chromosome[chromosome == mut_chr]
+        ))
+      ),
+      mutant_chromosome = chromosome == mut_chr
+    ) %>%
+    ggplot(aes(x = div, group = chromosome, colour = mutant_chromosome)) +
+    stat_ecdf() +
+    scale_colour_manual(values = c("grey50", "red")) +
+    labs(
+      title = names(allele_dist[ind]),
+      x = "DAR",
+      y = "F(DAR)"
+    )
+})
+```
+
 ### Elastic window sizes
 
 ```{r plot_dist_winSize}
@@ -403,16 +442,14 @@ if (!file.exists(dist_winRanges_path)) {
 }
 ```
 
-```{r dgeList}
-dgeList <- readRDS(here("files/dgeList.Rds"))
-```
+### masterGR
 
-```{r genes_diversity}
+```{r masterGR}
 ## Takes ~5 mins to run so .Rds saved for convenience
 ## Note a few genes are lost that do not fall within a diversity range
-genes_diversity_path <- here("files/genes_diversity.Rds")
-if (!file.exists(genes_diversity_path)) {
-  genes_diversity <- lapply(dist_winRanges, function(winRanges){
+masterGR_path <- here("files/masterGR.Rds")
+if (!file.exists(masterGR_path)) {
+  masterGR <- map2(dist_winRanges, topDE, function(winRanges, tt){
     overlaps <- findOverlaps(GRanges(dgeList$genes), winRanges)
     lapply(unique(queryHits(overlaps)), function(query){
       subjects <- subjectHits(overlaps)[queryHits(overlaps) == query]
@@ -422,11 +459,12 @@ if (!file.exists(genes_diversity_path)) {
         mutate(diversity = diversity)
     }) %>%
       bind_rows() %>%
+      left_join(tt[,c("gene_id", "logFC", "PValue", "FDR", "DE")]) %>%
       GRanges()
   })
-  saveRDS(genes_diversity, genes_diversity_path)
+  saveRDS(masterGR, masterGR_path)
 } else {
-  genes_diversity <- readRDS(genes_diversity_path)
+  masterGR <- readRDS(masterGR_path)
 }
 ```
 
@@ -584,7 +622,7 @@ plot_allele_dist(
 chr <- "24"
 ind <- 2
 thresh <- 0.3
-plotGenes <- genes_diversity[[ind]] %>%
+plotGenes <- masterGR[[ind]] %>%
   as_tibble() %>%
   left_join(topDE[[ind]][,c("gene_id", "DE")]) %>%
   dplyr::filter(DE, diversity <= thresh) %>%

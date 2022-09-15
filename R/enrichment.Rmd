@@ -115,10 +115,7 @@ geneGc <- transcripts %>%
 
 ```{r genes}
 genes <- genes(ensDb, filter = SeqNameFilter(primary_chrs)) %>%
-  .[,c("gene_id", "gene_name", "gene_biotype", "entrezid")] %>%
-  as_tibble() %>%
-  left_join(geneGc) %>%
-  GRanges()
+  .[,c("gene_id", "gene_name", "gene_biotype", "entrezid")]
 ```
 
 An `EnsDb` object was obtained for Ensembl release 101 with the `AnnotationHub` package.
@@ -257,35 +254,113 @@ wkByID <- wk %>%
 
 - The Wikipathways gene sets consists of `r length(wkByID)` gene sets ranging from sizes of `r min(sapply(wkByID, length))` to `r max(sapply(wkByID, length))` genes.
 
+## masterGR
+
+```{r}
+masterGR <- readRDS(here("files/masterGR.Rds"))
+```
+
 # Fisher's exact test for clustering
 
 ## Chromosome clustering
 
 ```{r}
-fisherClust_mps <- sapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
-  table(
-    topTables$MPSvsWT$DE,
-    topTables$MPSvsWT$chromosome == chr
-  ) %>%
-    fisher.test()
-}, simplify = FALSE) %>%
-  .[as.character(sort(as.numeric(names(.)), ))]
+byChr_fisher <- sapply(topTables, function(tt){
+  # Check for DE genes
+  if (sum(tt$DE)) {
+    sapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
+      table(
+        tt$DE,
+        tt$chromosome == chr
+      ) %>%
+        fisher.test()
+    }, simplify = FALSE) %>%
+      .[as.character(sort(as.numeric(names(.)), ))]
+  }
+}, simplify = FALSE)
 ```
 
 ```{r}
-lapply(fisherClust_mps, function(fisherRes){
-  fisherRes$p.value
-}) %>%
-  unlist() %>%
-  enframe(name = "chr", value = "p") %>%
-  mutate(
-    bonf = p.adjust(p, method = "bonf"),
-    sig = bonf < 0.05,
-    p = formatC(p, format = "e", digits = 2),
-    bonf = formatC(bonf, format = "e", digits = 2),
-  ) %>%
-  print(n = Inf)
+byChr_pvals <- sapply(byChr_fisher, function(geno){
+  lapply(geno, function(fisherRes){
+    fisherRes$p.value
+  }) %>%
+    unlist() %>%
+    enframe(name = "chr", value = "p") %>%
+    mutate(
+      bonf = p.adjust(p, method = "bonf"),
+      sig = bonf < 0.05,
+      p = formatC(p, format = "e", digits = 2),
+      bonf = formatC(bonf, format = "e", digits = 2),
+    ) %>%
+    dplyr::filter(sig)
+}, simplify = FALSE)
 ```
+
+### With DAR threshold
+
+Check if removing genes below a diversity threshold still shows an enrichment.
+
+```{r}
+threshold <- 0.3
+```
+
+```{r}
+byChrThresh_fisher <- sapply(masterGR, function(gr){
+  tbl <- as_tibble(gr) %>%
+    dplyr::filter(diversity <= threshold) %>%
+    mutate(chromosome = as.vector(seqnames))
+  # Check for DE genes
+  if (sum(tbl$DE)) {
+    sapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
+      table(
+        tbl$DE,
+        tbl$chromosome == chr
+      ) %>%
+        fisher.test()
+    }, simplify = FALSE) %>%
+      .[as.character(sort(as.numeric(names(.)), ))]
+  }
+}, simplify = FALSE)
+```
+
+```{r}
+byChrThresh_pvals <- sapply(byChrThresh_fisher, function(geno){
+  lapply(geno, function(fisherRes){
+    fisherRes$p.value
+  }) %>%
+    unlist() %>%
+    enframe(name = "chr", value = "p") %>%
+    mutate(
+      bonf = p.adjust(p, method = "bonf"),
+      sig = bonf < 0.05,
+      p = formatC(p, format = "e", digits = 2),
+      bonf = formatC(bonf, format = "e", digits = 2),
+    ) %>%
+    dplyr::filter(sig)
+}, simplify = FALSE)
+```
+
+Since we still have a significant enrichment for DE genes on the mutant chromosome, let's check the gene sets they belong to and see if they make sense.
+
+```{r}
+genesPassed <- as_tibble(masterGR$MPSvsWT) %>%
+  mutate(seqnames = as.factor(seqnames)) %>%
+  dplyr::filter(
+    seqnames == "24",
+    DE,
+    diversity <= threshold
+  ) %>%
+  .$gene_id
+```
+
+```{r}
+hmByGene[names(hmByGene) %in% genesPassed]
+kgByGene[names(kgByGene) %in% genesPassed]
+wkByGene[names(wkByGene) %in% genesPassed]
+```
+
+Only one gene is present in any of the gene sets, and it does not appear to have an expected relevance to MPS.
 
 ## Regional clustering
 
@@ -293,8 +368,10 @@ lapply(fisherClust_mps, function(fisherRes){
 region_size <- 1e6
 ```
 
+### Forward
+
 ```{r}
-regionsFwd_mps <- sapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
+regionsFwd <- sapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
   length <- chrInfo$length[chrInfo$name == chr]
   starts <- seq(1, length, by = region_size)
   # Remove last start as this is actually an end
@@ -318,44 +395,127 @@ regionsFwd_mps <- sapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
 ```
 
 ```{r}
-regionGenesFwd_mps <- sapply(regionsFwd_mps, function(region){
+regionsFwd_genes <- sapply(regionsFwd, function(region){
   subsetByOverlaps(genes, region)$gene_id
 }, simplify = FALSE)
 ```
 
 ```{r}
-clustRegionFwd_mps <- sapply(regionGenesFwd_mps, function(regionGenes){
-  tt <- topTables$MPSvsWT %>%
-    mutate(inRegion = gene_id %in% regionGenes)
-  # Will throw an error if no genes in region
-  if (sum(tt$inRegion) > 0) {
-    table(
-      tt$DE,
-      tt$inRegion
-    ) %>%
-      fisher.test()
+regionsFwd_fisher <- sapply(topTables, function(tt){
+  # Check for DE genes
+  if (sum(tt$DE)) {
+    sapply(regionsFwd_genes, function(regionGenes){
+      tt <- mutate(tt, inRegion = gene_id %in% regionGenes)
+      # Avoid error if no genes in region
+      if (sum(tt$inRegion) > 0) {
+        table(
+          tt$DE,
+          tt$inRegion
+        ) %>%
+          fisher.test()
+      }
+    }, simplify = FALSE)
   }
 }, simplify = FALSE)
 ```
 
 ```{r}
-sapply(clustRegionFwd_mps, function(fisherRes){
-  if (length(fisherRes)) {
-    fisherRes$p.value
-  } else {
-    return(1)
-  }
+regionsFwd_pvals <- sapply(regionsFwd_fisher, function(geno){
+  sapply(geno, function(fisherRes){
+    if (length(fisherRes)) {
+      fisherRes$p.value
+    } else {
+      return(1)
+    }
+  }, simplify = FALSE) %>%
+    unlist() %>%
+    enframe(name = "region", value = "p") %>%
+    mutate(
+      bonf = p.adjust(p, method = "bonf"),
+      sig = bonf < 0.05,
+      p = formatC(p, format = "e", digits = 2),
+      bonf = formatC(bonf, format = "e", digits = 2),
+    ) %>%
+    dplyr::filter(sig)
+}, simplify = FALSE)
+```
+
+```{r}
+genes[genes$gene_name == "naglu"]
+```
+
+### Reverse
+
+```{r}
+regionsRvs <- sapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
+  length <- chrInfo$length[chrInfo$name == chr]
+  starts <- seq(length, 1, by = -region_size)
+  # Reverse starts as GRanges won't handle regions with start > end
+  starts <- rev(starts)
+  # Remove last start as this is actually an end
+  starts <- starts[-length(starts)]
+  lapply(starts, function(start){
+    GRanges(
+      seqnames = chr,
+      ranges = IRanges(start = start, end = (start + region_size - 1))
+    )
+  }) %>%
+    set_names(paste0(
+      "chr",
+      chr,
+      ":",
+      starts, "-" , 
+      formatC(starts + region_size - 1, format = "d")
+    ))
 }, simplify = FALSE) %>%
-  unlist() %>%
-  enframe(name = "region", value = "p") %>%
-  mutate(
-    bonf = p.adjust(p, method = "bonf"),
-    sig = bonf < 0.05,
-    p = formatC(p, format = "e", digits = 2),
-    bonf = formatC(bonf, format = "e", digits = 2),
-  ) %>%
-  dplyr::filter(sig) %>%
-  print(n = Inf)
+  .[as.character(sort(as.numeric(names(.)), ))] %>%
+  flatten()
+```
+
+```{r}
+regionsRvs_genes <- sapply(regionsRvs, function(region){
+  subsetByOverlaps(genes, region)$gene_id
+}, simplify = FALSE)
+```
+
+```{r}
+regionsRvs_fisher <- sapply(topTables, function(tt){
+  # Check for DE genes
+  if (sum(tt$DE)) {
+    sapply(regionsFwd_genes, function(regionGenes){
+      tt <- mutate(tt, inRegion = gene_id %in% regionGenes)
+      # Avoid error if no genes in region
+      if (sum(tt$inRegion) > 0) {
+        table(
+          tt$DE,
+          tt$inRegion
+        ) %>%
+          fisher.test()
+      }
+    }, simplify = FALSE)
+  }
+}, simplify = FALSE)
+```
+
+```{r}
+regionsRvs_pvals <- sapply(regionsRvs_fisher, function(geno){
+  sapply(geno, function(fisherRes){
+    if (length(fisherRes)) {
+      fisherRes$p.value
+    } else {
+      return(1)
+    }
+  }, simplify = FALSE) %>%
+    unlist() %>%
+    enframe(name = "region", value = "p") %>%
+    mutate(
+      bonf = p.adjust(p, method = "bonf"),
+      sig = bonf < 0.05,
+      p = formatC(p, format = "e", digits = 2),
+      bonf = formatC(bonf, format = "e", digits = 2),
+    ) %>%
+    dplyr::filter(sig)
+}, simplify = FALSE)
 ```
 
 ```{r}
@@ -479,7 +639,7 @@ dist_winRanges <- readRDS(here("files/dist_winRanges.Rds"))
 ```
 
 ```{r}
-genes_diversity <- readRDS(here("files/genes_diversity.Rds"))
+masterGR <- readRDS(here("files/masterGR.Rds"))
 ```
 
 ```{r}
@@ -488,7 +648,7 @@ thresholds <- seq(0.1, 1.0, 0.1)
 
 ```{r}
 threshOutcomes <- sapply(colnames(contrasts), function(cont){
-  topT_div <- as_tibble(genes_diversity[[cont]]) %>%
+  topT_div <- as_tibble(masterGR[[cont]]) %>%
     dplyr::select(gene_id, diversity) %>%
     left_join(topTables[[cont]])
   n_DE <- topT_div %>%
@@ -556,7 +716,7 @@ threshPlots_de <- lapply(threshOutcomes, function(x){
 hm_fry_eqtl <- colnames(contrasts) %>%
   sapply(function(cont){
     lapply(thresholds, function(threshVal){
-      genes_passed <- genes_diversity[[cont]] %>%
+      genes_passed <- masterGR[[cont]] %>%
         as_tibble() %>%
         dplyr::filter(diversity <= threshVal) %>%
         pull(gene_id)
@@ -746,7 +906,7 @@ if (length(hm_fry_eqtl_sig$MPSvsWT)) {
 kg_fry_eqtl <- colnames(contrasts) %>%
   sapply(function(cont){
     lapply(thresholds, function(threshVal){
-      genes_passed <- genes_diversity[[cont]] %>%
+      genes_passed <- masterGR[[cont]] %>%
         as_tibble() %>%
         dplyr::filter(diversity <= threshVal) %>%
         pull(gene_id)
@@ -936,7 +1096,7 @@ if (length(kg_fry_eqtl_sig$MPSvsWT)) {
 wk_fry_eqtl <- colnames(contrasts) %>%
   sapply(function(cont){
     lapply(thresholds, function(threshVal){
-      genes_passed <- genes_diversity[[cont]] %>%
+      genes_passed <- masterGR[[cont]] %>%
         as_tibble() %>%
         dplyr::filter(diversity <= threshVal) %>%
         pull(gene_id)
@@ -1147,7 +1307,7 @@ set.seed(220615)
 hm_gsea_eqtl <- colnames(contrasts) %>%
   sapply(function(cont){
     lapply(thresholds, function(threshVal){
-      genes_passed <- genes_diversity[[cont]] %>%
+      genes_passed <- masterGR[[cont]] %>%
         as_tibble() %>%
         dplyr::filter(diversity <= threshVal) %>%
         pull(gene_id)
@@ -1336,7 +1496,7 @@ set.seed(220615)
 kg_gsea_eqtl <- colnames(contrasts) %>%
   sapply(function(cont){
     lapply(thresholds, function(threshVal){
-      genes_passed <- genes_diversity[[cont]] %>%
+      genes_passed <- masterGR[[cont]] %>%
         as_tibble() %>%
         dplyr::filter(diversity <= threshVal) %>%
         pull(gene_id)
@@ -1525,7 +1685,7 @@ set.seed(220615)
 wk_gsea_eqtl <- colnames(contrasts) %>%
   sapply(function(cont){
     lapply(thresholds, function(threshVal){
-      genes_passed <- genes_diversity[[cont]] %>%
+      genes_passed <- masterGR[[cont]] %>%
         as_tibble() %>%
         dplyr::filter(diversity <= threshVal) %>%
         pull(gene_id)
@@ -1707,10 +1867,156 @@ if (length(wk_gsea_eqtl_sig$MPSvsWT)) {
 }
 ```
 
+# Weighting the ranked list
+
+```{r}
+ranks_d_dar <- lapply(masterGR, function(x){
+  x %>%
+    as_tibble() %>%
+    mutate(stat = (-log10(PValue) * sign(logFC)) * (1 - diversity)) %>%
+    dplyr::arrange(desc(stat)) %>%
+    with(structure(stat, names = gene_id))
+})
+```
+
+```{r}
+map2(ranks_d, ranks_d_dar, function(before, after){
+  before <- enframe(before, name = "gene_id", value = "before") %>%
+    mutate(rank_before = seq(1, length(gene_id), by = 1))
+  after <- enframe(after, name = "gene_id", value = "after") %>%
+    mutate(rank_after = seq(1, length(gene_id), by = 1))
+  left_join(before, after) %>%
+    ggplot(aes(rank_before, rank_after)) +
+    geom_point() +
+    geom_abline(slope = 1, intercept = 0, colour = "blue")
+})
+```
+
+```{r}
+set.seed(220615)
+hm_gsea_dar <- colnames(contrasts) %>%
+  sapply(function(cont){
+      genes_passed <- masterGR[[cont]] %>%
+        as_tibble() %>%
+        pull(gene_id)
+      fgseaMultilevel(hmByID, ranks_d[[cont]][genes_passed], eps = 0) %>%
+        as_tibble() %>%
+        dplyr::rename(FDR = padj, Pathway = pathway) %>%
+        dplyr::arrange(pval) %>%
+        mutate(
+          edgeSize = vapply(leadingEdge, length, numeric(1)),
+          Direction = case_when(
+            sign(ES) == 1 ~ "Up",
+            sign(ES) == -1 ~ "Down",
+            sign(ES) == 0 ~ "None"
+          ),
+          rank = row_number(),
+          bonf.p.adj = p.adjust(pval, "bonferroni"),
+          sig = bonf.p.adj < 0.05
+        )
+  }, simplify = FALSE)
+
+hm_gsea_eqtl$EOfADvsWT[[10]] %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything())
+hm_gsea_dar$EOfADvsWT %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything())
+
+hm_gsea_eqtl$MPSvsWT[[10]] %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything())
+hm_gsea_dar$MPSvsWT %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything())
+```
+
+```{r}
+set.seed(220615)
+kg_gsea_dar <- colnames(contrasts) %>%
+  sapply(function(cont){
+      genes_passed <- masterGR[[cont]] %>%
+        as_tibble() %>%
+        pull(gene_id)
+      fgseaMultilevel(kgByID, ranks_d[[cont]][genes_passed], eps = 0) %>%
+        as_tibble() %>%
+        dplyr::rename(FDR = padj, Pathway = pathway) %>%
+        dplyr::arrange(pval) %>%
+        mutate(
+          edgeSize = vapply(leadingEdge, length, numeric(1)),
+          Direction = case_when(
+            sign(ES) == 1 ~ "Up",
+            sign(ES) == -1 ~ "Down",
+            sign(ES) == 0 ~ "None"
+          ),
+          rank = row_number(),
+          bonf.p.adj = p.adjust(pval, "bonferroni"),
+          sig = bonf.p.adj < 0.05
+        )
+  }, simplify = FALSE)
+
+kg_gsea_eqtl$EOfADvsWT[[10]] %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything())
+kg_gsea_dar$EOfADvsWT %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything())
+
+kg_gsea_eqtl$MPSvsWT[[10]] %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything())
+kg_gsea_dar$MPSvsWT %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything())
+```
+
+```{r}
+set.seed(220615)
+wk_gsea_dar <- colnames(contrasts) %>%
+  sapply(function(cont){
+      genes_passed <- masterGR[[cont]] %>%
+        as_tibble() %>%
+        pull(gene_id)
+      fgseaMultilevel(wkByID, ranks_d[[cont]][genes_passed], eps = 0) %>%
+        as_tibble() %>%
+        dplyr::rename(FDR = padj, Pathway = pathway) %>%
+        dplyr::arrange(pval) %>%
+        mutate(
+          edgeSize = vapply(leadingEdge, length, numeric(1)),
+          Direction = case_when(
+            sign(ES) == 1 ~ "Up",
+            sign(ES) == -1 ~ "Down",
+            sign(ES) == 0 ~ "None"
+          ),
+          rank = row_number(),
+          bonf.p.adj = p.adjust(pval, "bonferroni"),
+          sig = bonf.p.adj < 0.05
+        )
+  }, simplify = FALSE)
+
+wk_gsea_eqtl$EOfADvsWT[[10]] %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything()) %>%
+  print(n = sum(.$fdr.sig))
+wk_gsea_dar$EOfADvsWT %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything()) %>%
+  print(n = sum(.$fdr.sig))
+
+wk_gsea_eqtl$MPSvsWT[[10]] %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything()) %>%
+  print(n = sum(.$fdr.sig))
+wk_gsea_dar$MPSvsWT %>%
+  mutate(fdr.sig = FDR < 0.05) %>%
+  dplyr::select(Pathway, pval, FDR, fdr.sig, bonf.p.adj, sig, everything()) %>%
+  print(n = sum(.$fdr.sig))
+```
+
 # Tmp
 
 ```{r}
-ttdiv <- map2(topTables, genes_diversity, function(tt, div){
+ttdiv <- map2(topTables, masterGR, function(tt, div){
   left_join(tt, as_tibble(div))
 })
 lapply(seq_along(ttdiv), function(x){
@@ -1722,30 +2028,4 @@ lapply(seq_along(ttdiv), function(x){
   geom_point() +
   labs(x = "Diversity score", y = log10plab) +
   facet_wrap(~contrast, ncol = 1)
-```
-
-# Localised enrichment
-
-First split our genes into `r region_size / 1e6`Mbp regions.
-Do this from both ends of the chromosome.
-
-```{r}
-# regionsFwd_mps <- 
-# chrInfo %>%
-#   dplyr::filter(name != "MT") %>%
-#   with(setNames(length, paste0("chr", name))) %>%
-#   lapply(function(length){
-#     seq(from = 1, to = length, by = region_size) %>%
-#       lapply(function(start){
-#         IRanges(start = start, end = start + region_size - 1, width = region_size)
-#       })
-#   })
-
-lapply(chrInfo$name[chrInfo$name != "MT"], function(chr){
-  length <- chrInfo$length[chrInfo$name == chr]
-  starts <- seq(1, length, by = region_size)
-  lapply(starts, function(start){
-    genes %>%
-  })
-})
 ```
