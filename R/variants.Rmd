@@ -302,43 +302,43 @@ allele_props <- lapply(allele_stats, function(stats){
 dist_winSize <- 11
 allele_dist_path <- here("files", "allele_dist.Rds")
 if (!file.exists(allele_dist_path)) {
-allele_dist <- lapply(
-  list(
-    allele_props[c("EOfAD-like", "WT")],
-    allele_props[c("MPS-IIIB", "WT")]
-  ),
-  function(props){
-    dist <- vapply(seq(length(gr)), function(ind){
-      rbind(props[[1]][ind,], props[[2]][ind,]) %>%
-        dist() %>%
-        as.numeric()
-    }, numeric(1))
-    gr %>%
-      as_tibble() %>%
-      mutate(dist = dist) %>%
-      dplyr::filter(!is.na(dist)) %>%
-      split(f = .$seqnames) %>%
-      lapply(function(chr){
-        dplyr::mutate(
-          chr,
-          ## Something strange is happening with rollmean()
-          ## Consecutive 0s are being reported as having small negative rollmeans
-          ## Seems like a bug, but rollapply with the partial argument works correctly
-          # dist_rollmean = rollmean(dist, k = dist_winSize, fill = NA),
-          dist_rollmean = rollapply(dist, width = dist_winSize, mean, partial = TRUE),
-          diversity = dist_rollmean / sqrt(2),  # sqrt(2) is the maximum dist
-          win_start = lag(start, n = (dist_winSize - 1) / 2),
-          win_end = lead(start, n = (dist_winSize - 1) / 2),
-          win_size = win_end - win_start
-        ) %>%
-          dplyr::select(-c(dist))
-      }) %>%
-      bind_rows() %>%
-      GRanges()
-  }
-) %>%
-  set_names(c("EOfADvsWT", "MPSvsWT"))
-saveRDS(allele_dist, allele_dist_path) 
+  allele_dist <- lapply(
+    list(
+      allele_props[c("EOfAD-like", "WT")],
+      allele_props[c("MPS-IIIB", "WT")]
+    ),
+    function(props){
+      dist <- vapply(seq(length(gr)), function(ind){
+        rbind(props[[1]][ind,], props[[2]][ind,]) %>%
+          dist() %>%
+          as.numeric()
+      }, numeric(1))
+      gr %>%
+        as_tibble() %>%
+        mutate(dist = dist) %>%
+        dplyr::filter(!is.na(dist)) %>%
+        split(f = .$seqnames) %>%
+        lapply(function(chr){
+          dplyr::mutate(
+            chr,
+            ## Something strange is happening with rollmean()
+            ## Consecutive 0s are being reported as having small negative rollmeans
+            ## Seems like a bug, but rollapply with partial = TRUE works correctly
+            # dist_rollmean = rollmean(dist, k = dist_winSize, fill = NA),
+            dist_rollmean = rollapply(dist, width = dist_winSize, mean, partial = TRUE),
+            diversity = dist_rollmean / sqrt(2),  # sqrt(2) is the maximum dist
+            win_start = lag(start, n = (dist_winSize - 1) / 2),
+            win_end = lead(start, n = (dist_winSize - 1) / 2),
+            win_size = win_end - win_start
+          ) %>%
+            dplyr::select(-c(dist))
+        }) %>%
+        bind_rows() %>%
+        GRanges()
+    }
+  ) %>%
+    set_names(c("EOfADvsWT", "MPSvsWT"))
+  saveRDS(allele_dist, allele_dist_path) 
 } else {
   allele_dist <- readRDS(allele_dist_path)
 }
