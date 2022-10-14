@@ -90,29 +90,6 @@ chrInfo <- getChromInfoFromEnsembl(ens_assembly, release = ens_release) %>%
 primary_chrs <- chrInfo$name
 ```
 
-```{r transcripts}
-transcripts <- transcripts(ensDb, filter = SeqNameFilter(primary_chrs))
-txLen <- exonsBy(ensDb, "tx", filter = SeqNameFilter(primary_chrs)) %>%
-  width() %>%
-  vapply(sum, integer(1))
-mcols(transcripts) <- mcols(transcripts)[
-  c("tx_id", "gene_id", "gc_content")
-] %>%
-  as.data.frame() %>%
-  mutate(length = txLen)
-```
-
-```{r geneGc}
-geneGc <- transcripts %>%
-  mcols() %>%
-  as_tibble() %>%
-  group_by(gene_id) %>%
-  summarise(
-    gc_content = sum(gc_content*length) / sum(length),
-    length = ceiling(median(length))
-  )
-```
-
 ```{r genes}
 genes <- genes(ensDb, filter = SeqNameFilter(primary_chrs)) %>%
   .[,c("gene_id", "gene_name", "gene_biotype", "entrezid")]
@@ -677,7 +654,7 @@ hm_cols <- setNames(hue_pal()(length(names(hmByID))), names(hmByID))
 ```{r}
 hm_fry_eqtl_top <- sapply(hm_fry_eqtl, function(contrast){
   lapply(contrast, function(threshold){
-    threshold[1:20,] %>%
+    threshold[1:10,] %>%
       pull(Pathway)
   }) %>%
     unlist() %>%
@@ -887,7 +864,7 @@ kg_cols <- setNames(hue_pal()(length(names(kgByID))), names(kgByID))
 ```{r}
 kg_fry_eqtl_top <- sapply(kg_fry_eqtl, function(contrast){
   lapply(contrast, function(threshold){
-    threshold[1:20,] %>%
+    threshold[1:10,] %>%
       pull(Pathway)
   }) %>%
     unlist() %>%
@@ -1097,7 +1074,7 @@ wk_cols <- setNames(hue_pal()(length(names(wkByID))), names(wkByID))
 ```{r}
 wk_fry_eqtl_top <- sapply(wk_fry_eqtl, function(contrast){
   lapply(contrast, function(threshold){
-    threshold[1:20,] %>%
+    threshold[1:10,] %>%
       pull(Pathway)
   }) %>%
     unlist() %>%
@@ -1326,7 +1303,7 @@ hm_cols <- setNames(hue_pal()(length(names(hmByID))), names(hmByID))
 ```{r}
 hm_gsea_eqtl_top <- sapply(hm_gsea_eqtl, function(contrast){
   lapply(contrast, function(threshold){
-    threshold[1:20,] %>%
+    threshold[1:10,] %>%
       pull(Pathway)
   }) %>%
     unlist() %>%
@@ -1533,7 +1510,7 @@ kg_cols <- setNames(hue_pal()(length(names(kgByID))), names(kgByID))
 ```{r}
 kg_gsea_eqtl_top <- sapply(kg_gsea_eqtl, function(contrast){
   lapply(contrast, function(threshold){
-    threshold[1:20,] %>%
+    threshold[1:10,] %>%
       pull(Pathway)
   }) %>%
     unlist() %>%
@@ -1740,7 +1717,7 @@ wk_cols <- setNames(hue_pal()(length(names(wkByID))), names(wkByID))
 ```{r}
 wk_gsea_eqtl_top <- sapply(wk_gsea_eqtl, function(contrast){
   lapply(contrast, function(threshold){
-    threshold[1:20,] %>%
+    threshold[1:10,] %>%
       pull(Pathway)
   }) %>%
     unlist() %>%
