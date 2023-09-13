@@ -330,7 +330,7 @@ kg_gsea_eqtl$MPSvsWT[[10]] %>%
     position = position_dodge2(width = 0.9, padding = 0.2),
     size = 5,
     vjust = 0.77
-    ) +
+  ) +
   coord_flip() +
   scale_fill_manual(
     limits = c("before_p", "after_p"),
@@ -363,29 +363,42 @@ map2(ranks_d, ranks_d_dar, function(before, after){
   left_join(before, after) %>%
     left_join(as_tibble(genes)) %>%
     mutate(change = abs(rank_before - rank_after)) %>%
+    dplyr::arrange(seqnames == 24) %>% # plot chr24 on top
     ggplot(aes(rank_before, rank_after)) +
-    geom_point(colour = "grey20", alpha = 0.4, size = 0.5) +
+    geom_point(
+      aes(colour = seqnames == 24, alpha = seqnames == 24),
+      size = 0.5
+    ) +
     geom_abline(slope = 1, intercept = 0, colour = "blue") +
     geom_label_repel(
       aes(label = gene_name),
       data = . %>%
         dplyr::filter(change > 2000),
-      colour = "red",
+      colour = "black",
       size = 2,
       label.padding = 0.1
     ) +
     labs(
       x = "Rank before weighting",
-      y = "Rank after weighting"
+      y = "Rank after weighting",
+      colour = "Chromosome 24"
     ) +
     scale_x_continuous(breaks = seq(0, 20000, 2000)) +
-    scale_y_continuous(breaks = seq(0, 20000, 2000))
+    scale_y_continuous(breaks = seq(0, 20000, 2000)) +
+    scale_colour_manual(
+      values = c("red", "grey20"),
+      breaks = c(TRUE, FALSE),
+      labels = c("True", "False")
+    ) +
+    scale_alpha_manual(values = c(1, 0.4), breaks = c(TRUE, FALSE)) +
+    guides(alpha = "none")
 })
 ```
 
 ```{r}
 ggsave(
-  "~/phd/publications/fisher_pub/figures/supp/effects_of_weighting.png",
+  "~/workspace/211130_Q96K97del_A603fs/effects_of_weighting.png",
+  # "~/phd/publications/fisher_pub/figures/supp/effects_of_weighting.png",
   device = "png",
   width = 18,
   height = 12,

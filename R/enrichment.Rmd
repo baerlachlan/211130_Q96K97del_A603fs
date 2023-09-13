@@ -190,7 +190,6 @@ deGenes <- lapply(topTables, function(tt){
 
 ## geneDAR
 
-
 ```{r}
 geneDAR <- readRDS(here("files/masterGR.Rds")) %>%
   map2(topTables, function(x, y){
