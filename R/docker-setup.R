@@ -5,10 +5,11 @@
 library(devtools)
 
 BiocManager::install(c(
-  "tidyverse", "magrittr", "future.apply", "here", "AnnotationHub", "purr",
+  "tidyverse", "magrittr", "future.apply", "here", "AnnotationHub", "purrr",
   "scales", "kableExtra", "tictoc", "ggrepel", "RColorBrewer", "ggpubr",
   "pander", "rmarkdown", "edgeR", "limma", "pheatmap", "cqn", "DT", "htmltools",
-  "plyranges", "ensembldb", "fgsea", "statmod"
+  "plyranges", "ensembldb", "fgsea", "statmod", "topGO", "org.Dr.eg.db",
+  "GO.db"
 ))
 install_version("msigdbr", version = "7.4.1")
 install_version("babelgene", version = "22.3")

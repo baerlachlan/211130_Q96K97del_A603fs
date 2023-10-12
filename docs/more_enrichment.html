@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Lachlan Baer" />
+
+
+<title>Further Enrichment Analyses</title>
+
+<script src="site_libs/header-attrs-2.21/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.6.2/htmlwidgets.js"></script>
+<link href="site_libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
+<script src="site_libs/datatables-binding-0.27/datatables.js"></script>
+<link href="site_libs/dt-core-1.12.1/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="site_libs/dt-core-1.12.1/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="site_libs/dt-core-1.12.1/js/jquery.dataTables.min.js"></script>
+<link href="site_libs/crosstalk-1.2.0/css/crosstalk.min.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.2.0/js/crosstalk.min.js"></script>
+<link href="site_libs/font-awesome-6.4.0/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.0/css/v4-shims.min.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="styles.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">211130_Q96K97del_A603fs</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="de.html">DE</a>
+</li>
+<li>
+  <a href="dar.html">DAR</a>
+</li>
+<li>
+  <a href="enrichment.html">Enrichment</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/baerlachlan/211130_Q96K97del_A603fs">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Further Enrichment Analyses</h1>
+<h3 class="subtitle">211130_Q96K97del_A603fs dataset</h3>
+<h4 class="author">Lachlan Baer</h4>
+<h4 class="date">12 October, 2023</h4>
+
+</div>
+
+
+<div id="setup" class="section level1">
+<h1>Setup</h1>
+<pre class="r"><code>suppressPackageStartupMessages({
+  ## Common
+  library(tidyverse)
+  library(magrittr)
+  library(future.apply)
+  library(here)
+  library(AnnotationHub)
+  library(purrr)
+  library(scales)
+  library(kableExtra)
+  library(tictoc)
+  library(ggrepel)
+  library(RColorBrewer)
+  library(ggpubr)
+  library(pander)
+  library(rmarkdown)
+  ## Project specific
+  library(DT)
+  library(org.Dr.eg.db)
+  library(GO.db)
+  library(goseq)
+  library(dnet)
+})</code></pre>
+<pre class="r"><code>if (interactive()) setwd(here::here())
+theme_set(theme_bw())
+cores &lt;- availableCores() - 1</code></pre>
+<pre class="r"><code>source(here(&quot;files/lbFuncs.R&quot;))</code></pre>
+<div id="ensdb" class="section level2">
+<h2>EnsDb</h2>
+<pre class="r"><code>ens_species &lt;- &quot;Danio rerio&quot;
+ens_release &lt;- &quot;101&quot;
+ens_assembly &lt;- &quot;GRCz11&quot;</code></pre>
+<pre class="r"><code>ah &lt;- AnnotationHub() %&gt;%
+  subset(species == ens_species) %&gt;%
+  subset(rdataclass == &quot;EnsDb&quot;)
+ahId &lt;- ah$ah_id[str_detect(ah$title, ens_release)]
+ensDb &lt;- ah[[ahId]]</code></pre>
+<pre class="r"><code>chrInfo &lt;- getChromInfoFromEnsembl(ens_assembly, release = ens_release) %&gt;%
+  dplyr::filter(coord_system == &quot;chromosome&quot;)
+primary_chrs &lt;- chrInfo$name</code></pre>
+<pre class="r"><code>genes &lt;- genes(ensDb, filter = SeqNameFilter(primary_chrs)) %&gt;%
+  .[,c(&quot;gene_id&quot;, &quot;gene_name&quot;, &quot;gene_biotype&quot;, &quot;entrezid&quot;)]</code></pre>
+<pre class="r"><code>entrezGenes &lt;- genes %&gt;%
+  as.data.frame() %&gt;%
+  dplyr::filter(!is.na(entrezid)) %&gt;%
+  mutate(entrezid = unAsIs(entrezid)) %&gt;%
+  unnest(entrezid) %&gt;%
+  dplyr::rename(entrez_gene = entrezid)</code></pre>
+<pre class="r"><code>geneChrs &lt;- as_tibble(genes) %&gt;%
+  dplyr::select(gene_id, chromosome = seqnames)</code></pre>
+</div>
+<div id="metadata" class="section level2">
+<h2>Metadata</h2>
+<pre class="r"><code>metadata &lt;- read_csv(here(&quot;files/samples.csv&quot;)) %&gt;%
+  ## We need some sample aliases that follow R naming conventions
+  mutate(
+    alias = case_when(
+      genotype == &quot;WT&quot; ~ paste0(&quot;WT_&quot;, sample),
+      genotype == &quot;EOfAD-like&quot; ~ paste0(&quot;fAD_&quot;, sample),
+      genotype == &quot;MPS-IIIB&quot; ~ paste0(&quot;MPS_&quot;, sample),
+    ),
+    genotype = factor(genotype, levels = c(&quot;WT&quot;, &quot;EOfAD-like&quot;, &quot;MPS-IIIB&quot;)),
+    group = genotype
+  ) %&gt;%
+  dplyr::arrange(genotype) %&gt;%
+  dplyr::select(sample, genotype, alias, everything())</code></pre>
+<pre class="r"><code>genoCols &lt;- metadata$genotype %&gt;%
+  levels() %&gt;%
+  length() %&gt;%
+  brewer.pal(&quot;Set1&quot;) %&gt;%
+  setNames(levels(metadata$genotype))</code></pre>
+<pre class="r"><code>samples_byGeno &lt;- metadata %&gt;%
+  split(f = .$genotype) %&gt;%
+  sapply(function(x){
+    pull(x, sample)
+  }, simplify = FALSE)</code></pre>
+</div>
+<div id="differential-expression-data" class="section level2">
+<h2>Differential expression data</h2>
+<pre class="r"><code>dgeList &lt;- readRDS(here(&quot;files/dgeList.Rds&quot;))</code></pre>
+<pre class="r"><code>design &lt;- model.matrix(~0 + group, data = dgeList$samples) %&gt;%
+  set_colnames(c(&quot;WT&quot;, &quot;EOfAD&quot;, &quot;MPSIIIB&quot;))</code></pre>
+<pre class="r"><code>contrasts &lt;- makeContrasts(
+  EOfADvsWT = EOfAD - WT,
+  MPSIIIBvsWT = MPSIIIB - WT,
+  levels = colnames(design)
+)</code></pre>
+<pre class="r"><code>topTables &lt;- readRDS(here(&quot;files/topTables.Rds&quot;)) %&gt;%
+  set_names(c(&quot;EOfADvsWT&quot;, &quot;MPSIIIBvsWT&quot;))</code></pre>
+<pre class="r"><code>deGenes &lt;- lapply(topTables, function(tt){
+  dplyr::filter(tt, DE) %&gt;%
+    pull(gene_id)
+})</code></pre>
+</div>
+<div id="genedar" class="section level2">
+<h2>geneDAR</h2>
+<pre class="r"><code>geneDAR &lt;- readRDS(here(&quot;files/masterGR.Rds&quot;)) %&gt;%
+  map2(topTables, function(x, y){
+    left_join(as_tibble(x), y[c(&quot;gene_id&quot;, &quot;logFC&quot;, &quot;PValue&quot;, &quot;DE&quot;)]) %&gt;%
+      GRanges()
+  }) %&gt;%
+  endoapply(function(x){plyranges::mutate(x, dar = diversity)}) %&gt;%
+  set_names(c(&quot;EOfADvsWT&quot;, &quot;MPSIIIBvsWT&quot;))</code></pre>
+</div>
+</div>
+<div id="goseq" class="section level1 tabset">
+<h1 class="tabset">goseq</h1>
+<p>Here we utilise the <code>goseq</code> package for further enrichment
+testing, which is designed specifically for Gene Ontology analysis of
+RNA-seq data. <code>goseq</code> provides us with the ability to account
+for bias in RNA-seq data, in particular transcript length.</p>
+<p>In our previous efforts (see <code>R/enrichment.Rmd</code>), we used
+<code>fry</code> and <code>fgsea</code> to examine the approach of DAR
+weighting/thresholding on enrichment analyses involving KEGG gene sets.
+We have chosen <code>goseq</code> to further explore the effects of
+utilising DAR with an alternative enrichment testing method and also
+different gene sets (GO terms).</p>
+<p>First we need to obtain GO terms that we will use for the analysis.
+GO terms are unique in that they follow a graph structure, with each
+each child node representing a more specific aspect of biology than its
+parent node. This means that some GO terms may be too broad to confer
+anything meaningful, and we may opt to filter these terms before
+adjusting p-values for multiple hypothesis testing. The following code
+chunk was initially written by Dr Stevie Pederson, and provides us with
+a <code>go_summaries</code> object with information on the
+shortest/longest paths back to the root node of the relevant
+ontology.</p>
+<pre class="r"><code>## Code takes a long time to run, so save resulting object 
+go_summaries_path &lt;- here(&quot;files/go_summaries.Rds&quot;)
+if (!file.exists(go_summaries_path)) {
+  graphs &lt;- c(BP = &quot;bp&quot;, CC = &quot;cc&quot;, MF = &quot;mf&quot;) %&gt;%
+    lapply(makeGOGraph) %&gt;%
+    lapply(function(x){removeNode(&quot;all&quot;, x)}) %&gt;%
+    lapply(dDAGreverse)
+  go_summaries &lt;- lapply(graphs, function(x){
+    lng &lt;- dDAGlevel(x, &quot;longest_path&quot;) - 1
+    shrt &lt;- dDAGlevel(x, &quot;shortest_path&quot;) - 1
+    tips &lt;- dDAGtip(x)
+    tibble(
+      id = unique(c(names(lng), names(shrt))),
+      shortest_path = shrt,
+      longest_path = lng,
+      terminal_node = id %in% tips
+    )
+  }) %&gt;%
+    bind_rows() %&gt;%
+    mutate(ontology = Ontology(id))
+  saveRDS(go_summaries, go_summaries_path)
+} else {
+  go_summaries &lt;- readRDS(go_summaries_path)
+}</code></pre>
+<p>We also grab the Ensembl ID to GO term mappings for zebrafish.</p>
+<pre class="r"><code>go &lt;- AnnotationDbi::select(
+  org.Dr.eg.db,
+  keys = keys(org.Dr.eg.db, &quot;ENSEMBL&quot;),
+  columns = c(&quot;GO&quot;),
+  keytype = &quot;ENSEMBL&quot;
+) %&gt;%
+  distinct(ENSEMBL, GO) 
+go_to_ens &lt;- go %&gt;%
+  split(f = .$GO) %&gt;%
+  lapply(extract2, &quot;ENSEMBL&quot;)
+ens_to_go &lt;- go %&gt;%
+  split(f = .$ENSEMBL) %&gt;%
+  lapply(extract2, &quot;GO&quot;)</code></pre>
+<div id="transcript-length" class="section level2">
+<h2>Transcript length</h2>
+<p><code>goseq</code> uses the Probability Weight Function (PWF) to
+determine the probability that a gene will be DE based on transcript
+length alone. The PWF is used to weight the chance of selecting each
+gene when forming a null distribution for GO category membership.</p>
+<pre class="r"><code>pwf_len &lt;- geneDAR$MPSIIIBvsWT %&gt;%
+  with(
+    nullp(
+      DEgenes = structure(DE, names = gene_id),
+      bias.data = length,
+      plot.fit = FALSE
+    )
+  )</code></pre>
+<p>We can plot the PWF to assess the impact of transcript length bias on
+our data.</p>
+<pre class="r"><code>plotPWF(pwf_len, binsize = 200)</code></pre>
+<p><img src="more_enrichment_files/figure-html/plot_pwf_len-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>The graph above illustrates that there is minimal transcript length
+bias in our data, which reinforces our decision to not apply
+<code>cqn</code> for differential testing (see <code>de.Rmd</code>).</p>
+<p>We can now perform the enrichment test.</p>
+<pre class="r"><code>goseq_len &lt;- goseq(pwf_len, gene2cat = ens_to_go) %&gt;%
+  as_tibble() %&gt;%
+  dplyr::select(
+    id = category, n_de = numDEInCat, n_total = numInCat, 
+    p = over_represented_pvalue, term
+  ) %&gt;%
+  left_join(go_summaries)</code></pre>
+<p>We choose remove GO terms with no DE genes, and also terms that
+consist of only a few genes (&lt;5).</p>
+<pre class="r"><code>goseq_len %&gt;%
+  dplyr::filter(n_de &gt; 0, n_total &gt;= 5) %&gt;%
+  mutate(
+    fdr = p.adjust(p, method = &quot;fdr&quot;),
+    sig = fdr &lt; 0.05
+  ) %&gt;%
+  dplyr::select(id, n_de, n_total, p, fdr, sig, ontology, term) %&gt;%
+  lbSimpleDT(cap = &quot;goseq using transcript length as bias data&quot;)</code></pre>
+<div id="htmlwidget-c17a55765103f477b651" style="width:100%;height:100%;" class="datatables html-widget "></div>
+<script type="application/json" data-for="htmlwidget-c17a55765103f477b651">{"x":{"filter":"none","vertical":false,"caption":"<caption style=\"text-align: left;\">goseq using transcript length as bias data<\/caption>","data":[["GO:0019262","GO:0006044","GO:0005764","GO:0051607","GO:0005975","GO:0005576","GO:0071203","GO:0007160","GO:0042539","GO:0043551","GO:0006661","GO:0060415","GO:0036094","GO:0061001","GO:0015937","GO:0008066","GO:0001972","GO:0022904","GO:0098719","GO:0099078","GO:0032418","GO:0005768","GO:0006825","GO:0006885","GO:0030198","GO:0005765","GO:0048596","GO:0045022","GO:0031083","GO:0008569","GO:0016628","GO:0051959","GO:0050790","GO:0043001","GO:0048593","GO:0070286","GO:0004089","GO:0090504","GO:0030133","GO:0008217","GO:0006811","GO:0071004","GO:0035249","GO:0045505","GO:0000421","GO:0016773","GO:0006376","GO:0031593","GO:0031012","GO:0007187","GO:0007032","GO:0016836","GO:0046907","GO:0004993","GO:0019898","GO:0005685","GO:0042734","GO:0030286","GO:0030199","GO:0050804","GO:0004970","GO:0005874","GO:0009881","GO:0003341","GO:0007602","GO:0015276","GO:0043473","GO:0006511","GO:0071466","GO:0010506","GO:0034446","GO:0006730","GO:0016197","GO:0030414","GO:0022857","GO:0031966","GO:0015297","GO:0001501","GO:0005581","GO:0006874","GO:0005814","GO:0031901","GO:0055085","GO:0060026","GO:0000139","GO:0035725","GO:0010008","GO:0051603","GO:0007030","GO:1904315","GO:0033674","GO:0031902","GO:0014069","GO:0050896","GO:0030594","GO:0005201","GO:0016020","GO:0042802","GO:0030334","GO:0004197","GO:0007018","GO:0006814","GO:0030030","GO:0005777","GO:0003774","GO:0031101","GO:0070588","GO:0004222","GO:0015293","GO:0006816","GO:0009953","GO:0006631","GO:0062023","GO:0038023","GO:0015629","GO:0016853","GO:0012505","GO:0005887","GO:0030425","GO:0008234","GO:0045211","GO:0003674","GO:0005929","GO:0016829","GO:0007268","GO:0005615","GO:0007601","GO:0016021","GO:0008017","GO:0003729","GO:0005829","GO:0006281","GO:0005216","GO:0031410","GO:0060271","GO:0000166","GO:0016192","GO:0045202","GO:0006629","GO:0004930","GO:0003924","GO:0042995","GO:0005737","GO:0008233","GO:0003824","GO:0030054","GO:0007186","GO:0005524","GO:0005789","GO:0005525","GO:0005739","GO:0006508","GO:0005794","GO:0005886","GO:0005856","GO:0016491","GO:0005509","GO:0007275","GO:0016310","GO:0016301","GO:0008270","GO:0016787","GO:0005783","GO:0008150","GO:0005575","GO:0007165","GO:0046872","GO:0003677","GO:0016740","GO:0005634"],[2,2,4,2,3,6,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,4,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,1,1,3,1,2,1,1,1,1,1,1,1,1,1,1,1,17,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,1,1,5,1,1,1,3,1,13,1,1,3,1,1,1,1,4,1,1,1,1,1,1,9,1,1,1,1,3,1,1,2,1,1,4,1,1,1,1,1,1,1,2,1,1,1,1,4,1,1,1],[5,12,163,34,176,729,5,69,5,6,6,6,5,7,7,8,7,7,9,7,8,243,8,10,101,93,10,10,8,11,10,13,11,12,14,15,14,15,14,16,562,16,19,16,17,19,18,18,153,20,20,18,21,21,21,17,22,23,24,26,28,182,29,31,31,34,32,188,31,33,35,33,39,37,232,39,46,49,48,49,50,48,521,52,245,57,51,45,56,56,66,56,66,64,68,73,5611,68,66,69,75,76,67,69,79,78,88,88,89,93,96,93,103,112,105,101,105,741,118,117,122,1348,127,134,136,751,132,4665,174,174,862,187,202,217,211,1483,251,293,286,307,295,315,3678,365,363,393,395,1369,395,398,797,449,537,2112,558,559,592,615,632,633,626,1230,681,694,752,889,2615,1207,1546,3796],["2.44e-09","9.52e-08","4.73e-07","9.87e-06","6.56e-05","7.28e-05","1.10e-04","1.13e-04","1.16e-04","1.53e-04","1.59e-04","1.73e-04","2.12e-04","2.58e-04","2.89e-04","3.19e-04","3.33e-04","3.36e-04","3.62e-04","3.63e-04","3.88e-04","4.04e-04","4.36e-04","4.44e-04","4.46e-04","4.56e-04","4.74e-04","4.85e-04","5.26e-04","5.71e-04","6.21e-04","7.76e-04","8.44e-04","9.81e-04","1.00e-03","1.16e-03","1.23e-03","1.25e-03","1.33e-03","1.36e-03","1.52e-03","1.65e-03","1.73e-03","1.74e-03","1.78e-03","1.87e-03","1.95e-03","1.97e-03","2.05e-03","2.06e-03","2.13e-03","2.19e-03","2.24e-03","2.25e-03","2.31e-03","2.35e-03","2.54e-03","2.75e-03","2.87e-03","3.28e-03","3.48e-03","4.29e-03","4.31e-03","4.64e-03","5.06e-03","5.13e-03","5.14e-03","5.23e-03","5.40e-03","5.90e-03","5.99e-03","6.29e-03","7.28e-03","7.37e-03","9.36e-03","9.51e-03","9.62e-03","1.02e-02","1.07e-02","1.17e-02","1.17e-02","1.18e-02","1.21e-02","1.25e-02","1.27e-02","1.31e-02","1.34e-02","1.34e-02","1.46e-02","1.49e-02","1.73e-02","1.79e-02","1.91e-02","1.93e-02","2.15e-02","2.16e-02","2.18e-02","2.19e-02","2.26e-02","2.35e-02","2.39e-02","2.41e-02","2.42e-02","2.45e-02","2.67e-02","2.71e-02","3.09e-02","3.10e-02","3.18e-02","3.44e-02","3.84e-02","4.37e-02","4.40e-02","4.82e-02","4.94e-02","5.20e-02","5.26e-02","5.29e-02","5.81e-02","5.90e-02","5.96e-02","6.44e-02","7.01e-02","7.33e-02","7.61e-02","7.75e-02","8.62e-02","9.06e-02","1.07e-01","1.25e-01","1.25e-01","1.29e-01","1.30e-01","1.59e-01","1.59e-01","2.04e-01","2.15e-01","2.51e-01","2.55e-01","2.58e-01","2.61e-01","2.78e-01","2.98e-01","3.43e-01","3.48e-01","3.60e-01","3.75e-01","3.76e-01","3.81e-01","3.83e-01","4.01e-01","4.34e-01","5.23e-01","5.37e-01","5.48e-01","5.60e-01","5.72e-01","5.83e-01","6.01e-01","6.02e-01","6.06e-01","6.45e-01","6.67e-01","6.92e-01","7.34e-01","7.70e-01","7.79e-01","8.96e-01","9.56e-01","1.00e+00"],["7.06e-05","6.88e-04","1.52e-03","1.78e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.81e-02","1.83e-02","1.87e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.26e-02","2.37e-02","2.38e-02","2.64e-02","2.70e-02","3.13e-02","3.13e-02","3.27e-02","3.27e-02","3.27e-02","3.27e-02","3.27e-02","3.28e-02","3.44e-02","3.44e-02","3.51e-02","3.89e-02","3.89e-02","4.69e-02","4.69e-02","4.69e-02","4.83e-02","4.94e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.30e-02","5.30e-02","6.03e-02","6.13e-02","6.32e-02","6.32e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.97e-02","6.97e-02","7.69e-02","7.69e-02","7.73e-02","8.23e-02","9.01e-02","9.96e-02","9.96e-02","1.07e-01","1.08e-01","1.10e-01","1.10e-01","1.10e-01","1.18e-01","1.18e-01","1.18e-01","1.25e-01","1.34e-01","1.38e-01","1.41e-01","1.41e-01","1.54e-01","1.60e-01","1.86e-01","2.11e-01","2.11e-01","2.12e-01","2.12e-01","2.52e-01","2.52e-01","3.19e-01","3.30e-01","3.79e-01","3.79e-01","3.79e-01","3.79e-01","3.98e-01","4.21e-01","4.78e-01","4.78e-01","4.88e-01","4.92e-01","4.92e-01","4.92e-01","4.92e-01","5.09e-01","5.43e-01","6.46e-01","6.54e-01","6.59e-01","6.65e-01","6.71e-01","6.75e-01","6.76e-01","6.76e-01","6.76e-01","7.10e-01","7.26e-01","7.43e-01","7.79e-01","8.07e-01","8.08e-01","9.18e-01","9.68e-01","1.00e+00"],[true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],["BP","BP","CC","BP","BP","CC","CC","BP","BP","BP","BP","BP","MF","BP","BP","MF","MF","BP","BP","CC","BP","CC","BP","BP","BP","CC","BP","BP","CC","MF","MF","MF","BP","BP","BP","BP","MF","BP","CC","BP","BP","CC","BP","MF","CC","MF","BP","MF","CC","BP","BP","MF","BP","MF","CC","CC","CC","CC","BP","BP","MF","CC","MF","BP","BP","MF","BP","BP","BP","BP","BP","BP","BP","MF","MF","CC","MF","BP","CC","BP","CC","CC","BP","BP","CC","BP","CC","BP","BP","MF","BP","CC","CC","BP","MF","MF","CC","MF","BP","MF","BP","BP","BP","CC","MF","BP","BP","MF","MF","BP","BP","BP","CC","MF","CC","MF","CC","CC","CC","MF","CC","MF","CC","MF","BP","CC","BP","CC","MF","MF","CC","BP","MF","CC","BP","MF","BP","CC","BP","MF","MF","CC","CC","MF","MF","CC","BP","MF","CC","MF","CC","BP","CC","CC","CC","MF","MF","BP","BP","MF","MF","MF","CC","BP","CC","BP","MF","MF","MF","CC"],["N-acetylneuraminate catabolic process","N-acetylglucosamine metabolic process","lysosome","defense response to virus","carbohydrate metabolic process","extracellular region","WASH complex","cell-matrix adhesion","hypotonic salinity response","regulation of phosphatidylinositol 3-kinase activity","phosphatidylinositol biosynthetic process","muscle tissue morphogenesis","small molecule binding","regulation of dendritic spine morphogenesis","coenzyme A biosynthetic process","glutamate receptor activity","retinoic acid binding","respiratory electron transport chain","sodium ion import across plasma membrane","BORC complex","lysosome localization","endosome","copper ion transport","regulation of pH","extracellular matrix organization","lysosomal membrane","embryonic camera-type eye morphogenesis","early endosome to late endosome transport","BLOC-1 complex","minus-end-directed microtubule motor activity","oxidoreductase activity, acting on the CH-CH group of donors, NAD or NADP as acceptor","dynein light intermediate chain binding","regulation of catalytic activity","Golgi to plasma membrane protein transport","camera-type eye morphogenesis","axonemal dynein complex assembly","carbonate dehydratase activity","epiboly","transport vesicle","regulation of blood pressure","ion transport","U2-type prespliceosome","synaptic transmission, glutamatergic","dynein intermediate chain binding","autophagosome membrane","phosphotransferase activity, alcohol group as acceptor","mRNA splice site selection","polyubiquitin modification-dependent protein binding","extracellular matrix","G protein-coupled receptor signaling pathway, coupled to cyclic nucleotide second messenger","endosome organization","hydro-lyase activity","intracellular transport","G protein-coupled serotonin receptor activity","extrinsic component of membrane","U1 snRNP","presynaptic membrane","dynein complex","collagen fibril organization","modulation of chemical synaptic transmission","ionotropic glutamate receptor activity","microtubule","photoreceptor activity","cilium movement","phototransduction","ligand-gated ion channel activity","pigmentation","ubiquitin-dependent protein catabolic process","cellular response to xenobiotic stimulus","regulation of autophagy","substrate adhesion-dependent cell spreading","one-carbon metabolic process","endosomal transport","peptidase inhibitor activity","transmembrane transporter activity","mitochondrial membrane","antiporter activity","skeletal system development","collagen trimer","cellular calcium ion homeostasis","centriole","early endosome membrane","transmembrane transport","convergent extension","Golgi membrane","sodium ion transmembrane transport","endosome membrane","proteolysis involved in protein catabolic process","Golgi organization","transmitter-gated ion channel activity involved in regulation of postsynaptic membrane potential","positive regulation of kinase activity","late endosome membrane","postsynaptic density","response to stimulus","neurotransmitter receptor activity","extracellular matrix structural constituent","membrane","identical protein binding","regulation of cell migration","cysteine-type endopeptidase activity","microtubule-based movement","sodium ion transport","cell projection organization","peroxisome","cytoskeletal motor activity","fin regeneration","calcium ion transmembrane transport","metalloendopeptidase activity","symporter activity","calcium ion transport","dorsal/ventral pattern formation","fatty acid metabolic process","collagen-containing extracellular matrix","signaling receptor activity","actin cytoskeleton","isomerase activity","endomembrane system","integral component of plasma membrane","dendrite","cysteine-type peptidase activity","postsynaptic membrane","molecular_function","cilium","lyase activity","chemical synaptic transmission","extracellular space","visual perception","integral component of membrane","microtubule binding","mRNA binding","cytosol","DNA repair","ion channel activity","cytoplasmic vesicle","cilium assembly","nucleotide binding","vesicle-mediated transport","synapse","lipid metabolic process","G protein-coupled receptor activity","GTPase activity","cell projection","cytoplasm","peptidase activity","catalytic activity","cell junction","G protein-coupled receptor signaling pathway","ATP binding","endoplasmic reticulum membrane","GTP binding","mitochondrion","proteolysis","Golgi apparatus","plasma membrane","cytoskeleton","oxidoreductase activity","calcium ion binding","multicellular organism development","phosphorylation","kinase activity","zinc ion binding","hydrolase activity","endoplasmic reticulum","biological_process","cellular_component","signal transduction","metal ion binding","DNA binding","transferase activity","nucleus"]],"container":"<table class=\"stripe hover row-border order-column compact nowrap\">\n  <thead>\n    <tr>\n      <th>id<\/th>\n      <th>n_de<\/th>\n      <th>n_total<\/th>\n      <th>p<\/th>\n      <th>fdr<\/th>\n      <th>sig<\/th>\n      <th>ontology<\/th>\n      <th>term<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"t","columnDefs":[{"className":"dt-left","targets":"_all"}],"pageLength":-1,"scrollCollapse":true,"scrollY":350,"scrollX":true,"sScrollX":"100%","order":[],"autoWidth":false,"orderClasses":false,"lengthMenu":[-1,10,25,50,100]},"selection":{"mode":"multiple","selected":null,"target":"row","selectable":null}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="dar" class="section level2">
+<h2>DAR</h2>
+<p>While <code>goseq</code> was intended to use transcript length as the
+bias data when calculating the PWF, we can choose to use other data that
+we expect biases differential expression results. We believe that DAR is
+a good measure of bias, so let’s try using it to calculate the PWF.</p>
+<pre class="r"><code>pwf_dar &lt;- geneDAR$MPSIIIBvsWT %&gt;%
+  with(
+    nullp(
+      DEgenes = structure(DE, names = gene_id),
+      bias.data = dar,
+      plot.fit = FALSE
+    )
+  )</code></pre>
+<pre class="r"><code>plotPWF(pwf_dar, binsize = 200)</code></pre>
+<p><img src="more_enrichment_files/figure-html/plot_pwf_dar-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>We can see a clear trend that DE genes tend to occur in regions of
+high DAR.</p>
+<pre class="r"><code>goseq_dar &lt;- goseq(pwf_dar, gene2cat = ens_to_go) %&gt;%
+  as_tibble() %&gt;%
+  dplyr::select(
+    id = category, n_de = numDEInCat, n_total = numInCat, 
+    p = over_represented_pvalue, term
+  ) %&gt;%
+  left_join(go_summaries)</code></pre>
+<pre class="r"><code>goseq_dar %&gt;%
+  dplyr::filter(n_de &gt; 0, n_total &gt;= 5) %&gt;%
+  mutate(
+    fdr = p.adjust(p, method = &quot;fdr&quot;),
+    sig = fdr &lt; 0.05
+  ) %&gt;%
+  dplyr::select(id, n_de, n_total, p, fdr, sig, ontology, term) %&gt;%
+  lbSimpleDT(cap = &quot;goseq using DAR as bias data&quot;)</code></pre>
+<div id="htmlwidget-db8b5fde10463a2bda7c" style="width:100%;height:100%;" class="datatables html-widget "></div>
+<script type="application/json" data-for="htmlwidget-db8b5fde10463a2bda7c">{"x":{"filter":"none","vertical":false,"caption":"<caption style=\"text-align: left;\">goseq using DAR as bias data<\/caption>","data":[["GO:0019262","GO:0006044","GO:0005764","GO:0071203","GO:0007160","GO:0036094","GO:0005975","GO:0006661","GO:0001972","GO:0008066","GO:0005768","GO:0030198","GO:0005576","GO:0048596","GO:0006825","GO:0008217","GO:0030133","GO:0060415","GO:0007032","GO:0005765","GO:0031083","GO:0043551","GO:0019898","GO:0051607","GO:0043001","GO:0004970","GO:0099078","GO:0032418","GO:0010506","GO:0048593","GO:0046907","GO:0030199","GO:0050804","GO:0015276","GO:0042539","GO:0022904","GO:0006511","GO:0090504","GO:0007187","GO:0004993","GO:0098719","GO:0006885","GO:0031012","GO:0042734","GO:0051603","GO:0000421","GO:0006811","GO:0031593","GO:0050790","GO:0009881","GO:0007602","GO:0016197","GO:0004089","GO:0010008","GO:0016628","GO:1904315","GO:0045022","GO:0008569","GO:0016836","GO:0051959","GO:0031902","GO:0005581","GO:0045505","GO:0043473","GO:0030414","GO:0005874","GO:0030286","GO:0060026","GO:0006730","GO:0042802","GO:0031966","GO:0003341","GO:0061001","GO:0030594","GO:0015297","GO:0004197","GO:0005201","GO:0016773","GO:0006874","GO:0050896","GO:0031901","GO:0071466","GO:0006814","GO:0038023","GO:0000139","GO:0035249","GO:0031101","GO:0062023","GO:0008234","GO:0045211","GO:0033674","GO:0007018","GO:0006376","GO:0071004","GO:0005685","GO:0070286","GO:0034446","GO:0012505","GO:0022857","GO:0016020","GO:0006631","GO:0006816","GO:0030334","GO:0070588","GO:0035725","GO:0005615","GO:0004222","GO:0001501","GO:0014069","GO:0003774","GO:0016853","GO:0030425","GO:0007030","GO:0015293","GO:0005814","GO:0015937","GO:0007268","GO:0055085","GO:0009953","GO:0005887","GO:0005829","GO:0016829","GO:0005777","GO:0007601","GO:0003674","GO:0030030","GO:0016021","GO:0016192","GO:0015629","GO:0003729","GO:0006281","GO:0005216","GO:0008017","GO:0031410","GO:0005929","GO:0006629","GO:0004930","GO:0005737","GO:0060271","GO:0003924","GO:0045202","GO:0007186","GO:0008233","GO:0005789","GO:0005739","GO:0003824","GO:0030054","GO:0005525","GO:0042995","GO:0000166","GO:0008270","GO:0006508","GO:0016491","GO:0005509","GO:0005886","GO:0016301","GO:0005856","GO:0016310","GO:0005794","GO:0007275","GO:0005524","GO:0005783","GO:0016787","GO:0008150","GO:0005575","GO:0007165","GO:0046872","GO:0003677","GO:0016740","GO:0005634"],[2,2,4,1,2,1,3,1,1,1,3,2,6,1,1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,17,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,3,1,3,3,1,1,1,5,1,13,1,1,1,1,1,1,1,1,1,1,9,1,1,1,1,1,1,2,1,1,1,1,4,1,1,1,1,4,1,1,1,1,1,3,1,2,1,1,1,4,1,1,1],[5,12,163,5,69,5,176,6,7,8,243,101,729,10,8,16,14,6,20,93,8,6,21,34,12,28,7,8,33,14,21,24,26,34,5,7,188,15,20,21,9,10,153,22,45,17,562,18,11,29,31,39,14,51,10,56,10,11,18,13,56,48,16,32,37,182,23,52,33,68,39,31,7,68,46,69,73,19,49,64,48,31,76,112,245,19,78,103,117,122,66,75,18,16,17,15,35,105,232,5611,93,93,66,88,57,751,88,49,66,79,101,118,56,89,50,7,136,521,96,741,862,134,69,132,1348,67,4665,251,105,174,187,202,174,217,127,286,307,3678,211,295,293,395,365,395,797,363,393,398,315,1483,626,449,559,592,2112,633,558,632,537,615,1369,681,1230,694,752,889,2615,1207,1546,3796],["6.16e-10","8.65e-08","3.65e-07","2.17e-05","3.85e-05","4.74e-05","5.47e-05","8.04e-05","8.65e-05","9.87e-05","1.20e-04","1.52e-04","1.53e-04","1.95e-04","2.97e-04","3.22e-04","3.35e-04","3.86e-04","4.29e-04","4.33e-04","4.37e-04","4.73e-04","6.44e-04","6.86e-04","8.65e-04","1.08e-03","1.11e-03","1.16e-03","1.30e-03","1.31e-03","1.37e-03","1.47e-03","1.47e-03","1.55e-03","1.63e-03","1.76e-03","1.77e-03","1.90e-03","1.91e-03","2.08e-03","2.20e-03","2.28e-03","2.55e-03","2.59e-03","3.12e-03","3.34e-03","3.48e-03","3.67e-03","4.21e-03","4.42e-03","4.60e-03","4.86e-03","4.87e-03","5.10e-03","5.12e-03","5.40e-03","5.43e-03","5.48e-03","5.57e-03","5.90e-03","5.93e-03","6.03e-03","6.28e-03","6.69e-03","7.07e-03","7.56e-03","7.80e-03","9.58e-03","9.90e-03","1.03e-02","1.05e-02","1.08e-02","1.10e-02","1.11e-02","1.16e-02","1.21e-02","1.25e-02","1.29e-02","1.53e-02","1.60e-02","1.63e-02","1.71e-02","1.89e-02","2.02e-02","2.02e-02","2.07e-02","2.14e-02","2.19e-02","2.52e-02","2.53e-02","2.64e-02","2.72e-02","2.74e-02","2.77e-02","2.81e-02","2.89e-02","2.93e-02","3.19e-02","3.34e-02","3.39e-02","3.42e-02","3.48e-02","3.55e-02","3.70e-02","3.77e-02","3.77e-02","3.80e-02","3.88e-02","4.30e-02","4.48e-02","4.56e-02","5.12e-02","5.46e-02","5.59e-02","5.77e-02","5.93e-02","6.25e-02","6.35e-02","6.37e-02","6.49e-02","7.06e-02","8.61e-02","8.92e-02","9.83e-02","1.05e-01","1.16e-01","1.19e-01","1.22e-01","1.22e-01","1.29e-01","1.59e-01","1.65e-01","1.67e-01","1.82e-01","1.82e-01","1.94e-01","2.04e-01","2.33e-01","2.55e-01","2.69e-01","2.97e-01","3.08e-01","3.15e-01","3.25e-01","3.31e-01","3.31e-01","3.42e-01","3.63e-01","3.72e-01","3.87e-01","4.39e-01","4.44e-01","4.82e-01","5.31e-01","5.34e-01","5.61e-01","5.61e-01","5.61e-01","5.87e-01","5.97e-01","6.06e-01","6.11e-01","6.67e-01","6.71e-01","6.99e-01","7.33e-01","7.95e-01","8.65e-01","9.61e-01","1.00e+00"],["1.78e-05","6.25e-04","1.17e-03","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","3.44e-02","3.44e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.73e-02","3.73e-02","3.73e-02","3.87e-02","3.87e-02","4.45e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.57e-02","4.72e-02","4.84e-02","5.02e-02","5.02e-02","5.84e-02","5.84e-02","5.84e-02","5.84e-02","5.84e-02","5.84e-02","5.84e-02","5.97e-02","6.07e-02","6.07e-02","6.14e-02","7.11e-02","7.20e-02","7.20e-02","7.34e-02","7.92e-02","8.07e-02","8.07e-02","8.09e-02","8.17e-02","8.17e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.61e-02","1.04e-01","1.07e-01","1.07e-01","1.18e-01","1.24e-01","1.24e-01","1.26e-01","1.27e-01","1.30e-01","1.30e-01","1.30e-01","1.30e-01","1.39e-01","1.67e-01","1.70e-01","1.85e-01","1.94e-01","2.11e-01","2.12e-01","2.12e-01","2.12e-01","2.20e-01","2.67e-01","2.73e-01","2.73e-01","2.88e-01","2.88e-01","3.02e-01","3.15e-01","3.54e-01","3.81e-01","3.97e-01","4.32e-01","4.41e-01","4.45e-01","4.49e-01","4.49e-01","4.49e-01","4.58e-01","4.79e-01","4.85e-01","4.98e-01","5.56e-01","5.56e-01","5.95e-01","6.42e-01","6.42e-01","6.50e-01","6.50e-01","6.50e-01","6.72e-01","6.73e-01","6.73e-01","6.73e-01","7.21e-01","7.21e-01","7.42e-01","7.68e-01","8.24e-01","8.85e-01","9.73e-01","1.00e+00"],[true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],["BP","BP","CC","CC","BP","MF","BP","BP","MF","MF","CC","BP","CC","BP","BP","BP","CC","BP","BP","CC","CC","BP","CC","BP","BP","MF","CC","BP","BP","BP","BP","BP","BP","MF","BP","BP","BP","BP","BP","MF","BP","BP","CC","CC","BP","CC","BP","MF","BP","MF","BP","BP","MF","CC","MF","MF","BP","MF","MF","MF","CC","CC","MF","BP","MF","CC","CC","BP","BP","MF","CC","BP","BP","MF","MF","MF","MF","MF","BP","BP","CC","BP","BP","MF","CC","BP","BP","CC","MF","CC","BP","BP","BP","CC","CC","BP","BP","CC","MF","CC","BP","BP","BP","BP","BP","CC","MF","BP","CC","MF","MF","CC","BP","MF","CC","BP","BP","BP","BP","CC","CC","MF","CC","BP","MF","BP","CC","BP","CC","MF","BP","MF","MF","CC","CC","BP","MF","CC","BP","MF","CC","BP","MF","CC","CC","MF","CC","MF","CC","MF","MF","BP","MF","MF","CC","MF","CC","BP","CC","BP","MF","CC","MF","BP","CC","BP","MF","MF","MF","CC"],["N-acetylneuraminate catabolic process","N-acetylglucosamine metabolic process","lysosome","WASH complex","cell-matrix adhesion","small molecule binding","carbohydrate metabolic process","phosphatidylinositol biosynthetic process","retinoic acid binding","glutamate receptor activity","endosome","extracellular matrix organization","extracellular region","embryonic camera-type eye morphogenesis","copper ion transport","regulation of blood pressure","transport vesicle","muscle tissue morphogenesis","endosome organization","lysosomal membrane","BLOC-1 complex","regulation of phosphatidylinositol 3-kinase activity","extrinsic component of membrane","defense response to virus","Golgi to plasma membrane protein transport","ionotropic glutamate receptor activity","BORC complex","lysosome localization","regulation of autophagy","camera-type eye morphogenesis","intracellular transport","collagen fibril organization","modulation of chemical synaptic transmission","ligand-gated ion channel activity","hypotonic salinity response","respiratory electron transport chain","ubiquitin-dependent protein catabolic process","epiboly","G protein-coupled receptor signaling pathway, coupled to cyclic nucleotide second messenger","G protein-coupled serotonin receptor activity","sodium ion import across plasma membrane","regulation of pH","extracellular matrix","presynaptic membrane","proteolysis involved in protein catabolic process","autophagosome membrane","ion transport","polyubiquitin modification-dependent protein binding","regulation of catalytic activity","photoreceptor activity","phototransduction","endosomal transport","carbonate dehydratase activity","endosome membrane","oxidoreductase activity, acting on the CH-CH group of donors, NAD or NADP as acceptor","transmitter-gated ion channel activity involved in regulation of postsynaptic membrane potential","early endosome to late endosome transport","minus-end-directed microtubule motor activity","hydro-lyase activity","dynein light intermediate chain binding","late endosome membrane","collagen trimer","dynein intermediate chain binding","pigmentation","peptidase inhibitor activity","microtubule","dynein complex","convergent extension","one-carbon metabolic process","identical protein binding","mitochondrial membrane","cilium movement","regulation of dendritic spine morphogenesis","neurotransmitter receptor activity","antiporter activity","cysteine-type endopeptidase activity","extracellular matrix structural constituent","phosphotransferase activity, alcohol group as acceptor","cellular calcium ion homeostasis","response to stimulus","early endosome membrane","cellular response to xenobiotic stimulus","sodium ion transport","signaling receptor activity","Golgi membrane","synaptic transmission, glutamatergic","fin regeneration","collagen-containing extracellular matrix","cysteine-type peptidase activity","postsynaptic membrane","positive regulation of kinase activity","microtubule-based movement","mRNA splice site selection","U2-type prespliceosome","U1 snRNP","axonemal dynein complex assembly","substrate adhesion-dependent cell spreading","endomembrane system","transmembrane transporter activity","membrane","fatty acid metabolic process","calcium ion transport","regulation of cell migration","calcium ion transmembrane transport","sodium ion transmembrane transport","extracellular space","metalloendopeptidase activity","skeletal system development","postsynaptic density","cytoskeletal motor activity","isomerase activity","dendrite","Golgi organization","symporter activity","centriole","coenzyme A biosynthetic process","chemical synaptic transmission","transmembrane transport","dorsal/ventral pattern formation","integral component of plasma membrane","cytosol","lyase activity","peroxisome","visual perception","molecular_function","cell projection organization","integral component of membrane","vesicle-mediated transport","actin cytoskeleton","mRNA binding","DNA repair","ion channel activity","microtubule binding","cytoplasmic vesicle","cilium","lipid metabolic process","G protein-coupled receptor activity","cytoplasm","cilium assembly","GTPase activity","synapse","G protein-coupled receptor signaling pathway","peptidase activity","endoplasmic reticulum membrane","mitochondrion","catalytic activity","cell junction","GTP binding","cell projection","nucleotide binding","zinc ion binding","proteolysis","oxidoreductase activity","calcium ion binding","plasma membrane","kinase activity","cytoskeleton","phosphorylation","Golgi apparatus","multicellular organism development","ATP binding","endoplasmic reticulum","hydrolase activity","biological_process","cellular_component","signal transduction","metal ion binding","DNA binding","transferase activity","nucleus"]],"container":"<table class=\"stripe hover row-border order-column compact nowrap\">\n  <thead>\n    <tr>\n      <th>id<\/th>\n      <th>n_de<\/th>\n      <th>n_total<\/th>\n      <th>p<\/th>\n      <th>fdr<\/th>\n      <th>sig<\/th>\n      <th>ontology<\/th>\n      <th>term<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"t","columnDefs":[{"className":"dt-left","targets":"_all"}],"pageLength":-1,"scrollCollapse":true,"scrollY":350,"scrollX":true,"sScrollX":"100%","order":[],"autoWidth":false,"orderClasses":false,"lengthMenu":[-1,10,25,50,100]},"selection":{"mode":"multiple","selected":null,"target":"row","selectable":null}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="comparison" class="section level2">
+<h2>Comparison</h2>
+<p>Overall, the results between using transcript length and DAR are
+quite similar. Three terms (N-acetylneuraminate catabolic process,
+N-acetylglucosamine metabolic process, and lysosome) achieved
+significance in both analyses. These are GO terms that we expect to see
+in transcriptome comparisons of MPSIIIB mutants with wild-types.
+However, using DAR as bias data increased the significance of the
+relevant terms, while decreasing the significance of other terms. This
+might mean that using DAR as bias data achieves more meaningful results
+when length bias is not present. If lenth bias was present, this could
+be accounted for at the DE testing stage with <code>cqn</code>, and then
+DAR could be used at the enrichment testing stage with
+<code>goseq</code> (or by weighting ranks in the case of GSEA).</p>
+<pre class="r"><code>goseq_len_res &lt;- goseq_len %&gt;%
+  dplyr::filter(n_de &gt; 0, n_total &gt;= 5) %&gt;%
+  mutate(
+    fdr = p.adjust(p, method = &quot;fdr&quot;),
+    sig = fdr &lt; 0.05
+  ) %&gt;%
+  dplyr::select(id, n_de, n_total, p, fdr, sig, ontology, term)
+lbSimpleDT(goseq_len_res, cap = &quot;goseq using transcript length as bias data&quot;)</code></pre>
+<div id="htmlwidget-5f1915bb04f4ca16cf0e" style="width:100%;height:100%;" class="datatables html-widget "></div>
+<script type="application/json" data-for="htmlwidget-5f1915bb04f4ca16cf0e">{"x":{"filter":"none","vertical":false,"caption":"<caption style=\"text-align: left;\">goseq using transcript length as bias data<\/caption>","data":[["GO:0019262","GO:0006044","GO:0005764","GO:0051607","GO:0005975","GO:0005576","GO:0071203","GO:0007160","GO:0042539","GO:0043551","GO:0006661","GO:0060415","GO:0036094","GO:0061001","GO:0015937","GO:0008066","GO:0001972","GO:0022904","GO:0098719","GO:0099078","GO:0032418","GO:0005768","GO:0006825","GO:0006885","GO:0030198","GO:0005765","GO:0048596","GO:0045022","GO:0031083","GO:0008569","GO:0016628","GO:0051959","GO:0050790","GO:0043001","GO:0048593","GO:0070286","GO:0004089","GO:0090504","GO:0030133","GO:0008217","GO:0006811","GO:0071004","GO:0035249","GO:0045505","GO:0000421","GO:0016773","GO:0006376","GO:0031593","GO:0031012","GO:0007187","GO:0007032","GO:0016836","GO:0046907","GO:0004993","GO:0019898","GO:0005685","GO:0042734","GO:0030286","GO:0030199","GO:0050804","GO:0004970","GO:0005874","GO:0009881","GO:0003341","GO:0007602","GO:0015276","GO:0043473","GO:0006511","GO:0071466","GO:0010506","GO:0034446","GO:0006730","GO:0016197","GO:0030414","GO:0022857","GO:0031966","GO:0015297","GO:0001501","GO:0005581","GO:0006874","GO:0005814","GO:0031901","GO:0055085","GO:0060026","GO:0000139","GO:0035725","GO:0010008","GO:0051603","GO:0007030","GO:1904315","GO:0033674","GO:0031902","GO:0014069","GO:0050896","GO:0030594","GO:0005201","GO:0016020","GO:0042802","GO:0030334","GO:0004197","GO:0007018","GO:0006814","GO:0030030","GO:0005777","GO:0003774","GO:0031101","GO:0070588","GO:0004222","GO:0015293","GO:0006816","GO:0009953","GO:0006631","GO:0062023","GO:0038023","GO:0015629","GO:0016853","GO:0012505","GO:0005887","GO:0030425","GO:0008234","GO:0045211","GO:0003674","GO:0005929","GO:0016829","GO:0007268","GO:0005615","GO:0007601","GO:0016021","GO:0008017","GO:0003729","GO:0005829","GO:0006281","GO:0005216","GO:0031410","GO:0060271","GO:0000166","GO:0016192","GO:0045202","GO:0006629","GO:0004930","GO:0003924","GO:0042995","GO:0005737","GO:0008233","GO:0003824","GO:0030054","GO:0007186","GO:0005524","GO:0005789","GO:0005525","GO:0005739","GO:0006508","GO:0005794","GO:0005886","GO:0005856","GO:0016491","GO:0005509","GO:0007275","GO:0016310","GO:0016301","GO:0008270","GO:0016787","GO:0005783","GO:0008150","GO:0005575","GO:0007165","GO:0046872","GO:0003677","GO:0016740","GO:0005634"],[2,2,4,2,3,6,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,4,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,1,1,3,1,2,1,1,1,1,1,1,1,1,1,1,1,17,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,1,1,5,1,1,1,3,1,13,1,1,3,1,1,1,1,4,1,1,1,1,1,1,9,1,1,1,1,3,1,1,2,1,1,4,1,1,1,1,1,1,1,2,1,1,1,1,4,1,1,1],[5,12,163,34,176,729,5,69,5,6,6,6,5,7,7,8,7,7,9,7,8,243,8,10,101,93,10,10,8,11,10,13,11,12,14,15,14,15,14,16,562,16,19,16,17,19,18,18,153,20,20,18,21,21,21,17,22,23,24,26,28,182,29,31,31,34,32,188,31,33,35,33,39,37,232,39,46,49,48,49,50,48,521,52,245,57,51,45,56,56,66,56,66,64,68,73,5611,68,66,69,75,76,67,69,79,78,88,88,89,93,96,93,103,112,105,101,105,741,118,117,122,1348,127,134,136,751,132,4665,174,174,862,187,202,217,211,1483,251,293,286,307,295,315,3678,365,363,393,395,1369,395,398,797,449,537,2112,558,559,592,615,632,633,626,1230,681,694,752,889,2615,1207,1546,3796],["2.44e-09","9.52e-08","4.73e-07","9.87e-06","6.56e-05","7.28e-05","1.10e-04","1.13e-04","1.16e-04","1.53e-04","1.59e-04","1.73e-04","2.12e-04","2.58e-04","2.89e-04","3.19e-04","3.33e-04","3.36e-04","3.62e-04","3.63e-04","3.88e-04","4.04e-04","4.36e-04","4.44e-04","4.46e-04","4.56e-04","4.74e-04","4.85e-04","5.26e-04","5.71e-04","6.21e-04","7.76e-04","8.44e-04","9.81e-04","1.00e-03","1.16e-03","1.23e-03","1.25e-03","1.33e-03","1.36e-03","1.52e-03","1.65e-03","1.73e-03","1.74e-03","1.78e-03","1.87e-03","1.95e-03","1.97e-03","2.05e-03","2.06e-03","2.13e-03","2.19e-03","2.24e-03","2.25e-03","2.31e-03","2.35e-03","2.54e-03","2.75e-03","2.87e-03","3.28e-03","3.48e-03","4.29e-03","4.31e-03","4.64e-03","5.06e-03","5.13e-03","5.14e-03","5.23e-03","5.40e-03","5.90e-03","5.99e-03","6.29e-03","7.28e-03","7.37e-03","9.36e-03","9.51e-03","9.62e-03","1.02e-02","1.07e-02","1.17e-02","1.17e-02","1.18e-02","1.21e-02","1.25e-02","1.27e-02","1.31e-02","1.34e-02","1.34e-02","1.46e-02","1.49e-02","1.73e-02","1.79e-02","1.91e-02","1.93e-02","2.15e-02","2.16e-02","2.18e-02","2.19e-02","2.26e-02","2.35e-02","2.39e-02","2.41e-02","2.42e-02","2.45e-02","2.67e-02","2.71e-02","3.09e-02","3.10e-02","3.18e-02","3.44e-02","3.84e-02","4.37e-02","4.40e-02","4.82e-02","4.94e-02","5.20e-02","5.26e-02","5.29e-02","5.81e-02","5.90e-02","5.96e-02","6.44e-02","7.01e-02","7.33e-02","7.61e-02","7.75e-02","8.62e-02","9.06e-02","1.07e-01","1.25e-01","1.25e-01","1.29e-01","1.30e-01","1.59e-01","1.59e-01","2.04e-01","2.15e-01","2.51e-01","2.55e-01","2.58e-01","2.61e-01","2.78e-01","2.98e-01","3.43e-01","3.48e-01","3.60e-01","3.75e-01","3.76e-01","3.81e-01","3.83e-01","4.01e-01","4.34e-01","5.23e-01","5.37e-01","5.48e-01","5.60e-01","5.72e-01","5.83e-01","6.01e-01","6.02e-01","6.06e-01","6.45e-01","6.67e-01","6.92e-01","7.34e-01","7.70e-01","7.79e-01","8.96e-01","9.56e-01","1.00e+00"],["7.06e-05","6.88e-04","1.52e-03","1.78e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.79e-02","1.81e-02","1.83e-02","1.87e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.16e-02","2.26e-02","2.37e-02","2.38e-02","2.64e-02","2.70e-02","3.13e-02","3.13e-02","3.27e-02","3.27e-02","3.27e-02","3.27e-02","3.27e-02","3.28e-02","3.44e-02","3.44e-02","3.51e-02","3.89e-02","3.89e-02","4.69e-02","4.69e-02","4.69e-02","4.83e-02","4.94e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.02e-02","5.30e-02","5.30e-02","6.03e-02","6.13e-02","6.32e-02","6.32e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.55e-02","6.97e-02","6.97e-02","7.69e-02","7.69e-02","7.73e-02","8.23e-02","9.01e-02","9.96e-02","9.96e-02","1.07e-01","1.08e-01","1.10e-01","1.10e-01","1.10e-01","1.18e-01","1.18e-01","1.18e-01","1.25e-01","1.34e-01","1.38e-01","1.41e-01","1.41e-01","1.54e-01","1.60e-01","1.86e-01","2.11e-01","2.11e-01","2.12e-01","2.12e-01","2.52e-01","2.52e-01","3.19e-01","3.30e-01","3.79e-01","3.79e-01","3.79e-01","3.79e-01","3.98e-01","4.21e-01","4.78e-01","4.78e-01","4.88e-01","4.92e-01","4.92e-01","4.92e-01","4.92e-01","5.09e-01","5.43e-01","6.46e-01","6.54e-01","6.59e-01","6.65e-01","6.71e-01","6.75e-01","6.76e-01","6.76e-01","6.76e-01","7.10e-01","7.26e-01","7.43e-01","7.79e-01","8.07e-01","8.08e-01","9.18e-01","9.68e-01","1.00e+00"],[true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],["BP","BP","CC","BP","BP","CC","CC","BP","BP","BP","BP","BP","MF","BP","BP","MF","MF","BP","BP","CC","BP","CC","BP","BP","BP","CC","BP","BP","CC","MF","MF","MF","BP","BP","BP","BP","MF","BP","CC","BP","BP","CC","BP","MF","CC","MF","BP","MF","CC","BP","BP","MF","BP","MF","CC","CC","CC","CC","BP","BP","MF","CC","MF","BP","BP","MF","BP","BP","BP","BP","BP","BP","BP","MF","MF","CC","MF","BP","CC","BP","CC","CC","BP","BP","CC","BP","CC","BP","BP","MF","BP","CC","CC","BP","MF","MF","CC","MF","BP","MF","BP","BP","BP","CC","MF","BP","BP","MF","MF","BP","BP","BP","CC","MF","CC","MF","CC","CC","CC","MF","CC","MF","CC","MF","BP","CC","BP","CC","MF","MF","CC","BP","MF","CC","BP","MF","BP","CC","BP","MF","MF","CC","CC","MF","MF","CC","BP","MF","CC","MF","CC","BP","CC","CC","CC","MF","MF","BP","BP","MF","MF","MF","CC","BP","CC","BP","MF","MF","MF","CC"],["N-acetylneuraminate catabolic process","N-acetylglucosamine metabolic process","lysosome","defense response to virus","carbohydrate metabolic process","extracellular region","WASH complex","cell-matrix adhesion","hypotonic salinity response","regulation of phosphatidylinositol 3-kinase activity","phosphatidylinositol biosynthetic process","muscle tissue morphogenesis","small molecule binding","regulation of dendritic spine morphogenesis","coenzyme A biosynthetic process","glutamate receptor activity","retinoic acid binding","respiratory electron transport chain","sodium ion import across plasma membrane","BORC complex","lysosome localization","endosome","copper ion transport","regulation of pH","extracellular matrix organization","lysosomal membrane","embryonic camera-type eye morphogenesis","early endosome to late endosome transport","BLOC-1 complex","minus-end-directed microtubule motor activity","oxidoreductase activity, acting on the CH-CH group of donors, NAD or NADP as acceptor","dynein light intermediate chain binding","regulation of catalytic activity","Golgi to plasma membrane protein transport","camera-type eye morphogenesis","axonemal dynein complex assembly","carbonate dehydratase activity","epiboly","transport vesicle","regulation of blood pressure","ion transport","U2-type prespliceosome","synaptic transmission, glutamatergic","dynein intermediate chain binding","autophagosome membrane","phosphotransferase activity, alcohol group as acceptor","mRNA splice site selection","polyubiquitin modification-dependent protein binding","extracellular matrix","G protein-coupled receptor signaling pathway, coupled to cyclic nucleotide second messenger","endosome organization","hydro-lyase activity","intracellular transport","G protein-coupled serotonin receptor activity","extrinsic component of membrane","U1 snRNP","presynaptic membrane","dynein complex","collagen fibril organization","modulation of chemical synaptic transmission","ionotropic glutamate receptor activity","microtubule","photoreceptor activity","cilium movement","phototransduction","ligand-gated ion channel activity","pigmentation","ubiquitin-dependent protein catabolic process","cellular response to xenobiotic stimulus","regulation of autophagy","substrate adhesion-dependent cell spreading","one-carbon metabolic process","endosomal transport","peptidase inhibitor activity","transmembrane transporter activity","mitochondrial membrane","antiporter activity","skeletal system development","collagen trimer","cellular calcium ion homeostasis","centriole","early endosome membrane","transmembrane transport","convergent extension","Golgi membrane","sodium ion transmembrane transport","endosome membrane","proteolysis involved in protein catabolic process","Golgi organization","transmitter-gated ion channel activity involved in regulation of postsynaptic membrane potential","positive regulation of kinase activity","late endosome membrane","postsynaptic density","response to stimulus","neurotransmitter receptor activity","extracellular matrix structural constituent","membrane","identical protein binding","regulation of cell migration","cysteine-type endopeptidase activity","microtubule-based movement","sodium ion transport","cell projection organization","peroxisome","cytoskeletal motor activity","fin regeneration","calcium ion transmembrane transport","metalloendopeptidase activity","symporter activity","calcium ion transport","dorsal/ventral pattern formation","fatty acid metabolic process","collagen-containing extracellular matrix","signaling receptor activity","actin cytoskeleton","isomerase activity","endomembrane system","integral component of plasma membrane","dendrite","cysteine-type peptidase activity","postsynaptic membrane","molecular_function","cilium","lyase activity","chemical synaptic transmission","extracellular space","visual perception","integral component of membrane","microtubule binding","mRNA binding","cytosol","DNA repair","ion channel activity","cytoplasmic vesicle","cilium assembly","nucleotide binding","vesicle-mediated transport","synapse","lipid metabolic process","G protein-coupled receptor activity","GTPase activity","cell projection","cytoplasm","peptidase activity","catalytic activity","cell junction","G protein-coupled receptor signaling pathway","ATP binding","endoplasmic reticulum membrane","GTP binding","mitochondrion","proteolysis","Golgi apparatus","plasma membrane","cytoskeleton","oxidoreductase activity","calcium ion binding","multicellular organism development","phosphorylation","kinase activity","zinc ion binding","hydrolase activity","endoplasmic reticulum","biological_process","cellular_component","signal transduction","metal ion binding","DNA binding","transferase activity","nucleus"]],"container":"<table class=\"stripe hover row-border order-column compact nowrap\">\n  <thead>\n    <tr>\n      <th>id<\/th>\n      <th>n_de<\/th>\n      <th>n_total<\/th>\n      <th>p<\/th>\n      <th>fdr<\/th>\n      <th>sig<\/th>\n      <th>ontology<\/th>\n      <th>term<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"t","columnDefs":[{"className":"dt-left","targets":"_all"}],"pageLength":-1,"scrollCollapse":true,"scrollY":350,"scrollX":true,"sScrollX":"100%","order":[],"autoWidth":false,"orderClasses":false,"lengthMenu":[-1,10,25,50,100]},"selection":{"mode":"multiple","selected":null,"target":"row","selectable":null}},"evals":[],"jsHooks":[]}</script>
+<pre class="r"><code>goseq_dar_res &lt;- goseq_dar %&gt;%
+  dplyr::filter(n_de &gt; 0, n_total &gt;= 5) %&gt;%
+  mutate(
+    fdr = p.adjust(p, method = &quot;fdr&quot;),
+    sig = fdr &lt; 0.05
+  ) %&gt;%
+  dplyr::select(id, n_de, n_total, p, fdr, sig, ontology, term)
+lbSimpleDT(goseq_dar_res, cap = &quot;goseq using DAR as bias data&quot;)</code></pre>
+<div id="htmlwidget-b2c821f865735cf0e78a" style="width:100%;height:100%;" class="datatables html-widget "></div>
+<script type="application/json" data-for="htmlwidget-b2c821f865735cf0e78a">{"x":{"filter":"none","vertical":false,"caption":"<caption style=\"text-align: left;\">goseq using DAR as bias data<\/caption>","data":[["GO:0019262","GO:0006044","GO:0005764","GO:0071203","GO:0007160","GO:0036094","GO:0005975","GO:0006661","GO:0001972","GO:0008066","GO:0005768","GO:0030198","GO:0005576","GO:0048596","GO:0006825","GO:0008217","GO:0030133","GO:0060415","GO:0007032","GO:0005765","GO:0031083","GO:0043551","GO:0019898","GO:0051607","GO:0043001","GO:0004970","GO:0099078","GO:0032418","GO:0010506","GO:0048593","GO:0046907","GO:0030199","GO:0050804","GO:0015276","GO:0042539","GO:0022904","GO:0006511","GO:0090504","GO:0007187","GO:0004993","GO:0098719","GO:0006885","GO:0031012","GO:0042734","GO:0051603","GO:0000421","GO:0006811","GO:0031593","GO:0050790","GO:0009881","GO:0007602","GO:0016197","GO:0004089","GO:0010008","GO:0016628","GO:1904315","GO:0045022","GO:0008569","GO:0016836","GO:0051959","GO:0031902","GO:0005581","GO:0045505","GO:0043473","GO:0030414","GO:0005874","GO:0030286","GO:0060026","GO:0006730","GO:0042802","GO:0031966","GO:0003341","GO:0061001","GO:0030594","GO:0015297","GO:0004197","GO:0005201","GO:0016773","GO:0006874","GO:0050896","GO:0031901","GO:0071466","GO:0006814","GO:0038023","GO:0000139","GO:0035249","GO:0031101","GO:0062023","GO:0008234","GO:0045211","GO:0033674","GO:0007018","GO:0006376","GO:0071004","GO:0005685","GO:0070286","GO:0034446","GO:0012505","GO:0022857","GO:0016020","GO:0006631","GO:0006816","GO:0030334","GO:0070588","GO:0035725","GO:0005615","GO:0004222","GO:0001501","GO:0014069","GO:0003774","GO:0016853","GO:0030425","GO:0007030","GO:0015293","GO:0005814","GO:0015937","GO:0007268","GO:0055085","GO:0009953","GO:0005887","GO:0005829","GO:0016829","GO:0005777","GO:0007601","GO:0003674","GO:0030030","GO:0016021","GO:0016192","GO:0015629","GO:0003729","GO:0006281","GO:0005216","GO:0008017","GO:0031410","GO:0005929","GO:0006629","GO:0004930","GO:0005737","GO:0060271","GO:0003924","GO:0045202","GO:0007186","GO:0008233","GO:0005789","GO:0005739","GO:0003824","GO:0030054","GO:0005525","GO:0042995","GO:0000166","GO:0008270","GO:0006508","GO:0016491","GO:0005509","GO:0005886","GO:0016301","GO:0005856","GO:0016310","GO:0005794","GO:0007275","GO:0005524","GO:0005783","GO:0016787","GO:0008150","GO:0005575","GO:0007165","GO:0046872","GO:0003677","GO:0016740","GO:0005634"],[2,2,4,1,2,1,3,1,1,1,3,2,6,1,1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,17,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,3,1,3,3,1,1,1,5,1,13,1,1,1,1,1,1,1,1,1,1,9,1,1,1,1,1,1,2,1,1,1,1,4,1,1,1,1,4,1,1,1,1,1,3,1,2,1,1,1,4,1,1,1],[5,12,163,5,69,5,176,6,7,8,243,101,729,10,8,16,14,6,20,93,8,6,21,34,12,28,7,8,33,14,21,24,26,34,5,7,188,15,20,21,9,10,153,22,45,17,562,18,11,29,31,39,14,51,10,56,10,11,18,13,56,48,16,32,37,182,23,52,33,68,39,31,7,68,46,69,73,19,49,64,48,31,76,112,245,19,78,103,117,122,66,75,18,16,17,15,35,105,232,5611,93,93,66,88,57,751,88,49,66,79,101,118,56,89,50,7,136,521,96,741,862,134,69,132,1348,67,4665,251,105,174,187,202,174,217,127,286,307,3678,211,295,293,395,365,395,797,363,393,398,315,1483,626,449,559,592,2112,633,558,632,537,615,1369,681,1230,694,752,889,2615,1207,1546,3796],["6.16e-10","8.65e-08","3.65e-07","2.17e-05","3.85e-05","4.74e-05","5.47e-05","8.04e-05","8.65e-05","9.87e-05","1.20e-04","1.52e-04","1.53e-04","1.95e-04","2.97e-04","3.22e-04","3.35e-04","3.86e-04","4.29e-04","4.33e-04","4.37e-04","4.73e-04","6.44e-04","6.86e-04","8.65e-04","1.08e-03","1.11e-03","1.16e-03","1.30e-03","1.31e-03","1.37e-03","1.47e-03","1.47e-03","1.55e-03","1.63e-03","1.76e-03","1.77e-03","1.90e-03","1.91e-03","2.08e-03","2.20e-03","2.28e-03","2.55e-03","2.59e-03","3.12e-03","3.34e-03","3.48e-03","3.67e-03","4.21e-03","4.42e-03","4.60e-03","4.86e-03","4.87e-03","5.10e-03","5.12e-03","5.40e-03","5.43e-03","5.48e-03","5.57e-03","5.90e-03","5.93e-03","6.03e-03","6.28e-03","6.69e-03","7.07e-03","7.56e-03","7.80e-03","9.58e-03","9.90e-03","1.03e-02","1.05e-02","1.08e-02","1.10e-02","1.11e-02","1.16e-02","1.21e-02","1.25e-02","1.29e-02","1.53e-02","1.60e-02","1.63e-02","1.71e-02","1.89e-02","2.02e-02","2.02e-02","2.07e-02","2.14e-02","2.19e-02","2.52e-02","2.53e-02","2.64e-02","2.72e-02","2.74e-02","2.77e-02","2.81e-02","2.89e-02","2.93e-02","3.19e-02","3.34e-02","3.39e-02","3.42e-02","3.48e-02","3.55e-02","3.70e-02","3.77e-02","3.77e-02","3.80e-02","3.88e-02","4.30e-02","4.48e-02","4.56e-02","5.12e-02","5.46e-02","5.59e-02","5.77e-02","5.93e-02","6.25e-02","6.35e-02","6.37e-02","6.49e-02","7.06e-02","8.61e-02","8.92e-02","9.83e-02","1.05e-01","1.16e-01","1.19e-01","1.22e-01","1.22e-01","1.29e-01","1.59e-01","1.65e-01","1.67e-01","1.82e-01","1.82e-01","1.94e-01","2.04e-01","2.33e-01","2.55e-01","2.69e-01","2.97e-01","3.08e-01","3.15e-01","3.25e-01","3.31e-01","3.31e-01","3.42e-01","3.63e-01","3.72e-01","3.87e-01","4.39e-01","4.44e-01","4.82e-01","5.31e-01","5.34e-01","5.61e-01","5.61e-01","5.61e-01","5.87e-01","5.97e-01","6.06e-01","6.11e-01","6.67e-01","6.71e-01","6.99e-01","7.33e-01","7.95e-01","8.65e-01","9.61e-01","1.00e+00"],["1.78e-05","6.25e-04","1.17e-03","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.62e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","2.82e-02","3.44e-02","3.44e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.63e-02","3.73e-02","3.73e-02","3.73e-02","3.87e-02","3.87e-02","4.45e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.53e-02","4.57e-02","4.72e-02","4.84e-02","5.02e-02","5.02e-02","5.84e-02","5.84e-02","5.84e-02","5.84e-02","5.84e-02","5.84e-02","5.84e-02","5.97e-02","6.07e-02","6.07e-02","6.14e-02","7.11e-02","7.20e-02","7.20e-02","7.34e-02","7.92e-02","8.07e-02","8.07e-02","8.09e-02","8.17e-02","8.17e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","8.99e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.59e-02","9.61e-02","1.04e-01","1.07e-01","1.07e-01","1.18e-01","1.24e-01","1.24e-01","1.26e-01","1.27e-01","1.30e-01","1.30e-01","1.30e-01","1.30e-01","1.39e-01","1.67e-01","1.70e-01","1.85e-01","1.94e-01","2.11e-01","2.12e-01","2.12e-01","2.12e-01","2.20e-01","2.67e-01","2.73e-01","2.73e-01","2.88e-01","2.88e-01","3.02e-01","3.15e-01","3.54e-01","3.81e-01","3.97e-01","4.32e-01","4.41e-01","4.45e-01","4.49e-01","4.49e-01","4.49e-01","4.58e-01","4.79e-01","4.85e-01","4.98e-01","5.56e-01","5.56e-01","5.95e-01","6.42e-01","6.42e-01","6.50e-01","6.50e-01","6.50e-01","6.72e-01","6.73e-01","6.73e-01","6.73e-01","7.21e-01","7.21e-01","7.42e-01","7.68e-01","8.24e-01","8.85e-01","9.73e-01","1.00e+00"],[true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],["BP","BP","CC","CC","BP","MF","BP","BP","MF","MF","CC","BP","CC","BP","BP","BP","CC","BP","BP","CC","CC","BP","CC","BP","BP","MF","CC","BP","BP","BP","BP","BP","BP","MF","BP","BP","BP","BP","BP","MF","BP","BP","CC","CC","BP","CC","BP","MF","BP","MF","BP","BP","MF","CC","MF","MF","BP","MF","MF","MF","CC","CC","MF","BP","MF","CC","CC","BP","BP","MF","CC","BP","BP","MF","MF","MF","MF","MF","BP","BP","CC","BP","BP","MF","CC","BP","BP","CC","MF","CC","BP","BP","BP","CC","CC","BP","BP","CC","MF","CC","BP","BP","BP","BP","BP","CC","MF","BP","CC","MF","MF","CC","BP","MF","CC","BP","BP","BP","BP","CC","CC","MF","CC","BP","MF","BP","CC","BP","CC","MF","BP","MF","MF","CC","CC","BP","MF","CC","BP","MF","CC","BP","MF","CC","CC","MF","CC","MF","CC","MF","MF","BP","MF","MF","CC","MF","CC","BP","CC","BP","MF","CC","MF","BP","CC","BP","MF","MF","MF","CC"],["N-acetylneuraminate catabolic process","N-acetylglucosamine metabolic process","lysosome","WASH complex","cell-matrix adhesion","small molecule binding","carbohydrate metabolic process","phosphatidylinositol biosynthetic process","retinoic acid binding","glutamate receptor activity","endosome","extracellular matrix organization","extracellular region","embryonic camera-type eye morphogenesis","copper ion transport","regulation of blood pressure","transport vesicle","muscle tissue morphogenesis","endosome organization","lysosomal membrane","BLOC-1 complex","regulation of phosphatidylinositol 3-kinase activity","extrinsic component of membrane","defense response to virus","Golgi to plasma membrane protein transport","ionotropic glutamate receptor activity","BORC complex","lysosome localization","regulation of autophagy","camera-type eye morphogenesis","intracellular transport","collagen fibril organization","modulation of chemical synaptic transmission","ligand-gated ion channel activity","hypotonic salinity response","respiratory electron transport chain","ubiquitin-dependent protein catabolic process","epiboly","G protein-coupled receptor signaling pathway, coupled to cyclic nucleotide second messenger","G protein-coupled serotonin receptor activity","sodium ion import across plasma membrane","regulation of pH","extracellular matrix","presynaptic membrane","proteolysis involved in protein catabolic process","autophagosome membrane","ion transport","polyubiquitin modification-dependent protein binding","regulation of catalytic activity","photoreceptor activity","phototransduction","endosomal transport","carbonate dehydratase activity","endosome membrane","oxidoreductase activity, acting on the CH-CH group of donors, NAD or NADP as acceptor","transmitter-gated ion channel activity involved in regulation of postsynaptic membrane potential","early endosome to late endosome transport","minus-end-directed microtubule motor activity","hydro-lyase activity","dynein light intermediate chain binding","late endosome membrane","collagen trimer","dynein intermediate chain binding","pigmentation","peptidase inhibitor activity","microtubule","dynein complex","convergent extension","one-carbon metabolic process","identical protein binding","mitochondrial membrane","cilium movement","regulation of dendritic spine morphogenesis","neurotransmitter receptor activity","antiporter activity","cysteine-type endopeptidase activity","extracellular matrix structural constituent","phosphotransferase activity, alcohol group as acceptor","cellular calcium ion homeostasis","response to stimulus","early endosome membrane","cellular response to xenobiotic stimulus","sodium ion transport","signaling receptor activity","Golgi membrane","synaptic transmission, glutamatergic","fin regeneration","collagen-containing extracellular matrix","cysteine-type peptidase activity","postsynaptic membrane","positive regulation of kinase activity","microtubule-based movement","mRNA splice site selection","U2-type prespliceosome","U1 snRNP","axonemal dynein complex assembly","substrate adhesion-dependent cell spreading","endomembrane system","transmembrane transporter activity","membrane","fatty acid metabolic process","calcium ion transport","regulation of cell migration","calcium ion transmembrane transport","sodium ion transmembrane transport","extracellular space","metalloendopeptidase activity","skeletal system development","postsynaptic density","cytoskeletal motor activity","isomerase activity","dendrite","Golgi organization","symporter activity","centriole","coenzyme A biosynthetic process","chemical synaptic transmission","transmembrane transport","dorsal/ventral pattern formation","integral component of plasma membrane","cytosol","lyase activity","peroxisome","visual perception","molecular_function","cell projection organization","integral component of membrane","vesicle-mediated transport","actin cytoskeleton","mRNA binding","DNA repair","ion channel activity","microtubule binding","cytoplasmic vesicle","cilium","lipid metabolic process","G protein-coupled receptor activity","cytoplasm","cilium assembly","GTPase activity","synapse","G protein-coupled receptor signaling pathway","peptidase activity","endoplasmic reticulum membrane","mitochondrion","catalytic activity","cell junction","GTP binding","cell projection","nucleotide binding","zinc ion binding","proteolysis","oxidoreductase activity","calcium ion binding","plasma membrane","kinase activity","cytoskeleton","phosphorylation","Golgi apparatus","multicellular organism development","ATP binding","endoplasmic reticulum","hydrolase activity","biological_process","cellular_component","signal transduction","metal ion binding","DNA binding","transferase activity","nucleus"]],"container":"<table class=\"stripe hover row-border order-column compact nowrap\">\n  <thead>\n    <tr>\n      <th>id<\/th>\n      <th>n_de<\/th>\n      <th>n_total<\/th>\n      <th>p<\/th>\n      <th>fdr<\/th>\n      <th>sig<\/th>\n      <th>ontology<\/th>\n      <th>term<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"t","columnDefs":[{"className":"dt-left","targets":"_all"}],"pageLength":-1,"scrollCollapse":true,"scrollY":350,"scrollX":true,"sScrollX":"100%","order":[],"autoWidth":false,"orderClasses":false,"lengthMenu":[-1,10,25,50,100]},"selection":{"mode":"multiple","selected":null,"target":"row","selectable":null}},"evals":[],"jsHooks":[]}</script>
+<pre class="r"><code>safe_colorblind_palette &lt;- c(&quot;#88CCEE&quot;, &quot;#CC6677&quot;, &quot;#DDCC77&quot;, &quot;#117733&quot;, &quot;#332288&quot;, &quot;#AA4499&quot;, 
+                             &quot;#44AA99&quot;, &quot;#999933&quot;, &quot;#882255&quot;, &quot;#661100&quot;, &quot;#6699CC&quot;, &quot;#888888&quot;)
+top_terms_len &lt;- goseq_len_res[1:5,] %&gt;%
+  pull(term)
+top_terms_dar &lt;- goseq_dar_res[1:5,] %&gt;%
+  pull(term)
+plot_terms &lt;- rev(unique(c(top_terms_len, top_terms_dar)))
+goseq_len_res %&gt;%
+  dplyr::select(term, len_p = p, len_fdr = fdr, len_sig = sig) %&gt;%
+  left_join(goseq_dar_res) %&gt;%
+  dplyr::select(
+    term, len_p, len_sig, len_fdr,
+    dar_p = p, dar_fdr = fdr, dar_sig = sig
+  ) %&gt;%
+  dplyr::filter(term %in% plot_terms) %&gt;%
+  pivot_longer(cols = c(&quot;len_p&quot;, &quot;dar_p&quot;), names_to = &quot;p_group&quot;, values_to = &quot;p&quot;) %&gt;%
+  mutate(
+    p_group = factor(p_group, levels = c(&quot;dar_p&quot;, &quot;len_p&quot;)),
+    term = factor(term, levels = plot_terms),
+    labs = case_when(
+      p_group == &quot;len_p&quot; &amp; len_sig ~ &quot;*&quot;,
+      p_group == &quot;len_p&quot; &amp; !len_sig ~ &quot;&quot;,
+      p_group == &quot;dar_p&quot; &amp; dar_sig ~ &quot;*&quot;,
+      p_group == &quot;dar_p&quot; &amp; !dar_sig ~ &quot;&quot;,
+    )
+  ) %&gt;%
+  ggplot(aes(term, -log10(p), group = p_group, fill = p_group)) +
+  geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;, colour = &quot;black&quot;) +
+  geom_text(
+    aes(term, -log10(p) + 0.1, group = p_group, label = labs),
+    position = position_dodge2(width = 0.9, padding = 0.2),
+    size = 5,
+    vjust = 0.77
+  ) +
+  coord_flip() +
+  scale_fill_manual(
+    limits = c(&quot;len_p&quot;, &quot;dar_p&quot;),
+    values = c(&quot;#88CCEE&quot;, &quot;#CC6677&quot;),
+    labels = c(&quot;Transcript length&quot;, &quot;DAR&quot;)
+  ) +
+  scale_y_continuous(breaks = seq(0, 6, 1)) +
+  labs(x = &quot;GO term&quot;, y = log10plab, fill = &quot;Bias data input&quot;)</code></pre>
+<p><img src="more_enrichment_files/figure-html/goseq_comparison_plot-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="goseq-with-dar-thresholding" class="section level1">
+<h1>goseq with DAR thresholding</h1>
+<pre class="r"><code>thresholds &lt;- seq(0.1, 1.0, 0.1)</code></pre>
+<pre class="r"><code>initial_de &lt;- sum(geneDAR$MPSIIIBvsWT$DE)
+initial_not &lt;- sum(!geneDAR$MPSIIIBvsWT$DE)
+thresh_summary &lt;- sapply(thresholds, function(x){
+  geneDAR$MPSIIIBvsWT %&gt;%
+    dplyr::filter(dar &gt; x) %&gt;%
+    summarise(
+      n_de = sum(DE),
+      n_not = sum(!DE)
+    ) %&gt;%
+    as_tibble() %&gt;%
+    mutate(
+      prop_de = n_de / initial_de,
+      prop_not = n_not / initial_not,
+      threshold = x
+    )
+}, simplify = FALSE) %&gt;%
+  bind_rows()</code></pre>
+<pre class="r"><code>thresh_plot &lt;- thresh_summary %&gt;%
+  pivot_longer(
+    cols = c(n_de, prop_de, n_not, prop_not),
+    names_to = c(&quot;type&quot;, &quot;sig&quot;),
+    names_sep = &quot;_&quot;
+  ) %&gt;%
+  pivot_wider(
+    names_from = &quot;type&quot;,
+    values_from = &quot;value&quot;
+  ) %&gt;%
+  ggplot(aes(x = threshold, y = prop, group = sig, fill = sig)) +
+  geom_bar(position = &quot;dodge&quot;, stat = &quot;identity&quot;, width = 0.08) +
+  geom_text(
+    aes(x = threshold, y = prop, label = n),
+    size = 3,
+    nudge_y = 0.03,
+    nudge_x = c(-0.019, 0.019)
+  ) +
+  scale_x_continuous(breaks = thresholds) +
+  scale_y_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+  scale_fill_manual(values = c(&quot;grey&quot;, &quot;black&quot;), labels = c(&quot;DE&quot;, &quot;Not DE&quot;)) +
+  theme(plot.margin = margin(0, 5, 0, 0, unit = &quot;cm&quot;)) +
+  coord_cartesian(clip = &quot;off&quot;, xlim = c(0.1,1)) +
+  labs(y = &quot;Proportion of\ngenes removed&quot;, x = &quot;dar threshold&quot;) +
+  theme(
+    legend.position = c(1.05, 0.5),
+    legend.title = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+  )</code></pre>
+<div id="enrichment" class="section level3">
+<h3>Enrichment</h3>
+<pre class="r"><code>pwf_len_thresh &lt;- sapply(thresholds, function(x){
+  pwf &lt;- geneDAR$MPSIIIBvsWT %&gt;%
+    dplyr::filter(dar &lt;= x) %&gt;%
+    with(
+      nullp(
+        DEgenes = structure(DE, names = gene_id),
+        bias.data = length,
+        plot.fit = FALSE
+      )
+    )
+}, simplify = FALSE) %&gt;%
+  set_names(thresholds)</code></pre>
+<pre class="r"><code>goseq_len_thresh &lt;- sapply(pwf_len_thresh, function(x){
+  goseq(x, gene2cat = ens_to_go) %&gt;%
+    as_tibble() %&gt;%
+    dplyr::select(
+      id = category, n_de = numDEInCat, n_total = numInCat, 
+      p = over_represented_pvalue, term
+    ) %&gt;%
+    left_join(go_summaries)
+}, simplify = FALSE)
+goseq_len_thresh &lt;- lapply(seq_along(goseq_len_thresh), function(ind){
+  goseq_len_thresh[[ind]] %&gt;%
+    dplyr::filter(n_de &gt; 0, n_total &gt;= 5) %&gt;%
+    mutate(
+      fdr = p.adjust(p, method = &quot;fdr&quot;),
+      sig = fdr &lt; 0.05,
+      rank = row_number(),
+      threshold = thresholds[ind]
+    ) %&gt;%
+    dplyr::select(
+      id, n_de, n_total, p, fdr, sig, ontology, term, rank, threshold
+    )
+})</code></pre>
+</div>
+<div id="rank-visualisation" class="section level3">
+<h3>Rank visualisation</h3>
+<pre class="r"><code>goseq_len_thresh_top &lt;- lapply(goseq_len_thresh, function(x){
+  x[1:10,] %&gt;%
+    pull(id)
+}) %&gt;%
+  unlist() %&gt;%
+  unique()</code></pre>
+<pre class="r"><code>set.seed(2)
+cols &lt;- setNames(
+  ## Sample to randomise colouring so that terms with similar ranks aren&#39;t
+  ## assigned similar colours
+  sample(hue_pal()(length(goseq_len_thresh_top)), length(goseq_len_thresh_top)),
+  goseq_len_thresh_top
+)</code></pre>
+<pre class="r"><code>rank_plot_len &lt;- lapply(goseq_len_thresh, function(x){
+  x %&gt;%
+    dplyr::filter(id %in% goseq_len_thresh_top) %&gt;%
+    mutate(rel_rank = row_number())
+}) %&gt;%
+  bind_rows() %&gt;%
+  mutate(
+    label = ifelse(
+      threshold == 1,
+      str_trunc(term, width = 30),
+      NA
+    )
+  ) %&gt;%
+  ggplot(aes(
+    threshold,
+    rel_rank,
+    group = id,
+    colour = id,
+    fill = factor(ifelse(sig, id, NA)),
+  )) +
+  geom_line() +
+  geom_point(shape = 21, size = 4) +
+  geom_text(aes(label = rank), colour = &quot;black&quot;, size = 2.1) +
+  geom_text(aes(x = 1.01, label = label), size = 3.2, hjust = 0, na.rm = TRUE) +
+  scale_y_reverse(breaks = seq(1, length(goseq_len_thresh_top), 1)) +
+  scale_x_continuous(breaks = thresholds) +
+  scale_fill_manual(values = cols, na.value=&quot;white&quot;) +
+  scale_colour_manual(values = cols) +
+  labs(x = &quot;dar score cut-off&quot;, y = &quot;\nRelative rank&quot;) +
+  theme(plot.margin = margin(0, 5, 0, 0, unit = &quot;cm&quot;)) +
+  coord_cartesian(clip = &quot;off&quot;) +
+  theme(
+    legend.position = &quot;none&quot;,
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.border = element_blank(),
+    axis.title.x = element_blank(),
+  )</code></pre>
+<pre class="r"><code>ggarrange(
+  rank_plot_len,
+  NULL,
+  thresh_plot,
+  ncol = 1,
+  heights = c(4,0.2,1)
+)</code></pre>
+<p><img src="more_enrichment_files/figure-html/rank_plot_len_vis-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+<div id="p-value-visualisation" class="section level3">
+<h3>p-value visualisation</h3>
+<pre class="r"><code>goseq_len_thresh_sig &lt;- lapply(goseq_len_thresh, function(x){
+  x %&gt;%
+    dplyr::filter(sig) %&gt;%
+    pull(id)
+}) %&gt;%
+  unlist() %&gt;%
+  unique()</code></pre>
+<pre class="r"><code>p_plot_len &lt;- lapply(goseq_len_thresh, function(x){
+  x %&gt;%
+    dplyr::filter(id %in% goseq_len_thresh_sig) %&gt;%
+    mutate(rel_rank = row_number())
+}) %&gt;%
+  bind_rows() %&gt;%
+  mutate(
+    label = ifelse(
+      threshold == 1,
+      str_trunc(term, width = 30),
+      NA
+    )
+  ) %&gt;%
+  ggplot(aes(
+    threshold,
+    -log10(p),
+    group = id,
+    colour = id,
+    fill = factor(ifelse(sig, id, NA))
+  )) +
+  geom_line() +
+  geom_point(shape = 21, size = 4) +
+  geom_text(aes(label = n_de), colour = &quot;black&quot;, size = 2.1) +
+  scale_x_continuous(breaks = thresholds) +
+  scale_colour_manual(values = cols) +
+  scale_fill_manual(values = cols, na.value=&quot;white&quot;) +
+  labs(x = &quot;dar threshold&quot;, y = log10plab) +
+  facet_wrap(~term, ncol = 2) +
+  theme(
+    legend.position = &quot;none&quot;,
+    panel.grid.minor.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+  )</code></pre>
+<pre class="r"><code>p_plot_len</code></pre>
+<p><img src="more_enrichment_files/figure-html/p_plot_len_vis-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

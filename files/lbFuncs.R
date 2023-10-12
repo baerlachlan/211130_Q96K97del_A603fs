@@ -28,6 +28,22 @@ unAsIs <- function(x){
 ## Simple DT::datatable
 ## - for small tables needing simple presentation
 lbSimpleDT <- function(tbl, cap, rownames = FALSE){
+  ## Convert to scientific notation
+  tbl <- lapply(tbl, function(x){
+    if (is.numeric(x)) {
+      # browser()
+      str_len_max <- vapply(x, str_length, numeric(1)) %>%
+        max()
+      if (str_len_max > 6) {
+        label_scientific(x, digits = 3)(x)
+      } else {
+        x
+      }
+    } else {
+      x
+    }
+  }) %>%
+    as_tibble()
   datatable(
     tbl,
     caption = htmltools::tags$caption(

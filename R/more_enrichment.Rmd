@@ -27,15 +27,6 @@ knitr::opts_chunk$set(
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
-# Reproducibility of this analysis
-
-Please note that newer versions of `babelgene` and potentially `msigdbr` cause issues with the reproducibility of this document.
-The issues lies within the `babelgene` package (a dependency of `msigdbr`), which pulls the mappings of zebrafish orthologs to human genes, as required for the construction of gene sets.
-Unfortunately the `msigdbr()` function does not possess arguments to control this behaviour in a reproducible manner, and therefore the package version dictates the output of the function.
-To successfully reproduce this analysis the user's system must have `babelgene v22.3` installed, and also potentially `misgdbr v7.4.1` (analysis successfully reproduced with this version but not tested with newer versions i.e. 7.5.1).
-This document was rendered using a docker container with the required package versions installed (see Session information below for a complete list of packages).
-Packages were installed using the `R/docker-setup.R` script on a fresh container spun up from the `bioconductor/bioconductor_docker:RELEASE_3_16` image.
-
 # Setup
 
 ```{r packages}
@@ -56,15 +47,11 @@ suppressPackageStartupMessages({
   library(pander)
   library(rmarkdown)
   ## Project specific
-  library(edgeR)
-  library(limma)
-  library(pheatmap)
-  library(cqn)
   library(DT)
-  library(htmltools)
-  library(msigdbr)
-  library(fgsea)
-  library(plyranges)
+  library(org.Dr.eg.db)
+  library(GO.db)
+  library(goseq)
+  library(dnet)
 })
 ```
 
@@ -74,7 +61,7 @@ theme_set(theme_bw())
 cores <- availableCores() - 1
 ```
 
-```{r}
+```{r lbFuncs}
 source(here("files/lbFuncs.R"))
 ```
 
@@ -104,10 +91,6 @@ primary_chrs <- chrInfo$name
 genes <- genes(ensDb, filter = SeqNameFilter(primary_chrs)) %>%
   .[,c("gene_id", "gene_name", "gene_biotype", "entrezid")]
 ```
-
-An `EnsDb` object was obtained for Ensembl release 101 with the `AnnotationHub` package.
-This contained the information required to set up gene and transcript annotations.
-Gene-level estimates of GC content and length were also generated which may be required as covariates in suitable analyses.
 
 ```{r entrezGenes}
 entrezGenes <- genes %>%
@@ -190,7 +173,7 @@ deGenes <- lapply(topTables, function(tt){
 
 ## geneDAR
 
-```{r}
+```{r geneDAR}
 geneDAR <- readRDS(here("files/masterGR.Rds")) %>%
   map2(topTables, function(x, y){
     left_join(as_tibble(x), y[c("gene_id", "logFC", "PValue", "DE")]) %>%
@@ -200,85 +183,455 @@ geneDAR <- readRDS(here("files/masterGR.Rds")) %>%
   set_names(c("EOfADvsWT", "MPSIIIBvsWT"))
 ```
 
-# topGO
+# goseq {.tabset}
 
-```{r}
-library(topGO)
-library(org.Dr.eg.db)
-library(GO.db)
+Here we utilise the `goseq` package for further enrichment testing, which is designed specifically for Gene Ontology analysis of RNA-seq data.
+`goseq` provides us with the ability to account for bias in RNA-seq data, in particular transcript length.
+
+In our previous efforts (see `R/enrichment.Rmd`), we used `fry` and `fgsea` to examine the approach of DAR weighting/thresholding on enrichment analyses involving KEGG gene sets.
+We have chosen `goseq` to further explore the effects of utilising DAR with an alternative enrichment testing method and also different gene sets (GO terms).
+
+First we need to obtain GO terms that we will use for the analysis.
+GO terms are unique in that they follow a graph structure, with each each child node representing a more specific aspect of biology than its parent node.
+This means that some GO terms may be too broad to confer anything meaningful, and we may opt to filter these terms before adjusting p-values for multiple hypothesis testing.
+The following code chunk was initially written by Dr Stevie Pederson, and provides us with a `go_summaries` object with information on the shortest/longest paths back to the root node of the relevant ontology.
+
+```{r go_summaries}
+## Code takes a long time to run, so save resulting object 
+go_summaries_path <- here("files/go_summaries.Rds")
+if (!file.exists(go_summaries_path)) {
+  graphs <- c(BP = "bp", CC = "cc", MF = "mf") %>%
+    lapply(makeGOGraph) %>%
+    lapply(function(x){removeNode("all", x)}) %>%
+    lapply(dDAGreverse)
+  go_summaries <- lapply(graphs, function(x){
+    lng <- dDAGlevel(x, "longest_path") - 1
+    shrt <- dDAGlevel(x, "shortest_path") - 1
+    tips <- dDAGtip(x)
+    tibble(
+      id = unique(c(names(lng), names(shrt))),
+      shortest_path = shrt,
+      longest_path = lng,
+      terminal_node = id %in% tips
+    )
+  }) %>%
+    bind_rows() %>%
+    mutate(ontology = Ontology(id))
+  saveRDS(go_summaries, go_summaries_path)
+} else {
+  go_summaries <- readRDS(go_summaries_path)
+}
 ```
 
-```{r notes, eval=FALSE, include=FALSE}
-## -- Notes to self for *.db objects --
-## Show columns/keytypes
-columns(org.Dr.eg.db)
-## Get information on columns/keytypes
-help("ENSEMBL")
-```
+We also grab the Ensembl ID to GO term mappings for zebrafish.
 
-```{r ens2GO}
-ens2GO <- AnnotationDbi::select(
+```{r go}
+go <- AnnotationDbi::select(
   org.Dr.eg.db,
   keys = keys(org.Dr.eg.db, "ENSEMBL"),
   columns = c("GO"),
   keytype = "ENSEMBL"
 ) %>%
-  distinct(ENSEMBL, GO) %>%
+  distinct(ENSEMBL, GO) 
+go_to_ens <- go %>%
+  split(f = .$GO) %>%
+  lapply(extract2, "ENSEMBL")
+ens_to_go <- go %>%
   split(f = .$ENSEMBL) %>%
   lapply(extract2, "GO")
 ```
 
-```{r GO_info}
-GO_terms <- AnnotationDbi::select(
-  GO.db,
-  keys = keys(GO.db, "GOID"),
-  columns = c("TERM", "DEFINITION"),
-  keytype = "GOID"
-) %>%
-  as_tibble()
+## Transcript length
+
+`goseq` uses the Probability Weight Function (PWF) to determine the probability that a gene will be DE based on transcript length alone.
+The PWF is used to weight the chance of selecting each gene when forming a null distribution for GO category
+membership.
+
+```{r pwf_len}
+pwf_len <- geneDAR$MPSIIIBvsWT %>%
+  with(
+    nullp(
+      DEgenes = structure(DE, names = gene_id),
+      bias.data = length,
+      plot.fit = FALSE
+    )
+  )
 ```
 
-```{r}
-all_genes <- topTables$MPSIIIBvsWT %>%
-  with(structure(FDR, names = gene_id))
+We can plot the PWF to assess the impact of transcript length bias on our data.
+
+```{r plot_pwf_len}
+plotPWF(pwf_len, binsize = 200)
 ```
 
-```{r}
-sigGenes <- function(allScore) {
-  return(allScore < 0.05)
-}
+The graph above illustrates that there is minimal transcript length bias in our data, which reinforces our decision to not apply `cqn` for differential testing (see `de.Rmd`).
+
+We can now perform the enrichment test.
+
+```{r goseq_len}
+goseq_len <- goseq(pwf_len, gene2cat = ens_to_go) %>%
+  as_tibble() %>%
+  dplyr::select(
+    id = category, n_de = numDEInCat, n_total = numInCat, 
+    p = over_represented_pvalue, term
+  ) %>%
+  left_join(go_summaries)
 ```
 
-```{r}
-GO_data <- new(
-  "topGOdata",
-  ontology = "BP",
-  allGenes = all_genes,
-  geneSel = sigGenes,
-  annot = annFUN.gene2GO,
-  gene2GO = ens2GO,
-  nodeSize = 5
+We choose remove GO terms with no DE genes, and also terms that consist of only a few genes (<5).
+
+```{r goseq_len_res}
+goseq_len %>%
+  dplyr::filter(n_de > 0, n_total >= 5) %>%
+  mutate(
+    fdr = p.adjust(p, method = "fdr"),
+    sig = fdr < 0.05
+  ) %>%
+  dplyr::select(id, n_de, n_total, p, fdr, sig, ontology, term) %>%
+  lbSimpleDT(cap = "goseq using transcript length as bias data")
+```
+
+## DAR
+
+While `goseq` was intended to use transcript length as the bias data when calculating the PWF, we can choose to use other data that we expect biases differential expression results.
+We believe that DAR is a good measure of bias, so let's try using it to calculate the PWF.
+
+```{r pwf_dar}
+pwf_dar <- geneDAR$MPSIIIBvsWT %>%
+  with(
+    nullp(
+      DEgenes = structure(DE, names = gene_id),
+      bias.data = dar,
+      plot.fit = FALSE
+    )
+  )
+```
+
+```{r plot_pwf_dar}
+plotPWF(pwf_dar, binsize = 200)
+```
+
+We can see a clear trend that DE genes tend to occur in regions of high DAR.
+
+```{r goseq_dar}
+goseq_dar <- goseq(pwf_dar, gene2cat = ens_to_go) %>%
+  as_tibble() %>%
+  dplyr::select(
+    id = category, n_de = numDEInCat, n_total = numInCat, 
+    p = over_represented_pvalue, term
+  ) %>%
+  left_join(go_summaries)
+```
+
+```{r goseq_dar_res}
+goseq_dar %>%
+  dplyr::filter(n_de > 0, n_total >= 5) %>%
+  mutate(
+    fdr = p.adjust(p, method = "fdr"),
+    sig = fdr < 0.05
+  ) %>%
+  dplyr::select(id, n_de, n_total, p, fdr, sig, ontology, term) %>%
+  lbSimpleDT(cap = "goseq using DAR as bias data")
+```
+
+## Comparison
+
+Overall, the results between using transcript length and DAR are quite similar.
+Three terms (N-acetylneuraminate catabolic process, N-acetylglucosamine metabolic process, and lysosome) achieved significance in both analyses.
+These are GO terms that we expect to see in transcriptome comparisons of MPSIIIB mutants with wild-types.
+However, using DAR as bias data increased the significance of the relevant terms, while decreasing the significance of other terms.
+This might mean that using DAR as bias data achieves more meaningful results when length bias is not present.
+If lenth bias was present, this could be accounted for at the DE testing stage with `cqn`, and then DAR could be used at the enrichment testing stage with `goseq` (or by weighting ranks in the case of GSEA).
+
+```{r goseq_comparison}
+goseq_len_res <- goseq_len %>%
+  dplyr::filter(n_de > 0, n_total >= 5) %>%
+  mutate(
+    fdr = p.adjust(p, method = "fdr"),
+    sig = fdr < 0.05
+  ) %>%
+  dplyr::select(id, n_de, n_total, p, fdr, sig, ontology, term)
+lbSimpleDT(goseq_len_res, cap = "goseq using transcript length as bias data")
+
+goseq_dar_res <- goseq_dar %>%
+  dplyr::filter(n_de > 0, n_total >= 5) %>%
+  mutate(
+    fdr = p.adjust(p, method = "fdr"),
+    sig = fdr < 0.05
+  ) %>%
+  dplyr::select(id, n_de, n_total, p, fdr, sig, ontology, term)
+lbSimpleDT(goseq_dar_res, cap = "goseq using DAR as bias data")
+```
+
+```{r goseq_comparison_plot}
+safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                             "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+top_terms_len <- goseq_len_res[1:5,] %>%
+  pull(term)
+top_terms_dar <- goseq_dar_res[1:5,] %>%
+  pull(term)
+plot_terms <- rev(unique(c(top_terms_len, top_terms_dar)))
+goseq_len_res %>%
+  dplyr::select(term, len_p = p, len_fdr = fdr, len_sig = sig) %>%
+  left_join(goseq_dar_res) %>%
+  dplyr::select(
+    term, len_p, len_sig, len_fdr,
+    dar_p = p, dar_fdr = fdr, dar_sig = sig
+  ) %>%
+  dplyr::filter(term %in% plot_terms) %>%
+  pivot_longer(cols = c("len_p", "dar_p"), names_to = "p_group", values_to = "p") %>%
+  mutate(
+    p_group = factor(p_group, levels = c("dar_p", "len_p")),
+    term = factor(term, levels = plot_terms),
+    labs = case_when(
+      p_group == "len_p" & len_sig ~ "*",
+      p_group == "len_p" & !len_sig ~ "",
+      p_group == "dar_p" & dar_sig ~ "*",
+      p_group == "dar_p" & !dar_sig ~ "",
+    )
+  ) %>%
+  ggplot(aes(term, -log10(p), group = p_group, fill = p_group)) +
+  geom_bar(stat = "identity", position = "dodge", colour = "black") +
+  geom_text(
+    aes(term, -log10(p) + 0.1, group = p_group, label = labs),
+    position = position_dodge2(width = 0.9, padding = 0.2),
+    size = 5,
+    vjust = 0.77
+  ) +
+  coord_flip() +
+  scale_fill_manual(
+    limits = c("len_p", "dar_p"),
+    values = c("#88CCEE", "#CC6677"),
+    labels = c("Transcript length", "DAR")
+  ) +
+  scale_y_continuous(breaks = seq(0, 6, 1)) +
+  labs(x = "GO term", y = log10plab, fill = "Bias data input")
+```
+
+# goseq with DAR thresholding
+
+```{r thresholds}
+thresholds <- seq(0.1, 1.0, 0.1)
+```
+
+```{r thresh_summary}
+initial_de <- sum(geneDAR$MPSIIIBvsWT$DE)
+initial_not <- sum(!geneDAR$MPSIIIBvsWT$DE)
+thresh_summary <- sapply(thresholds, function(x){
+  geneDAR$MPSIIIBvsWT %>%
+    dplyr::filter(dar > x) %>%
+    summarise(
+      n_de = sum(DE),
+      n_not = sum(!DE)
+    ) %>%
+    as_tibble() %>%
+    mutate(
+      prop_de = n_de / initial_de,
+      prop_not = n_not / initial_not,
+      threshold = x
+    )
+}, simplify = FALSE) %>%
+  bind_rows()
+```
+
+```{r thresh_plot}
+thresh_plot <- thresh_summary %>%
+  pivot_longer(
+    cols = c(n_de, prop_de, n_not, prop_not),
+    names_to = c("type", "sig"),
+    names_sep = "_"
+  ) %>%
+  pivot_wider(
+    names_from = "type",
+    values_from = "value"
+  ) %>%
+  ggplot(aes(x = threshold, y = prop, group = sig, fill = sig)) +
+  geom_bar(position = "dodge", stat = "identity", width = 0.08) +
+  geom_text(
+    aes(x = threshold, y = prop, label = n),
+    size = 3,
+    nudge_y = 0.03,
+    nudge_x = c(-0.019, 0.019)
+  ) +
+  scale_x_continuous(breaks = thresholds) +
+  scale_y_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+  scale_fill_manual(values = c("grey", "black"), labels = c("DE", "Not DE")) +
+  theme(plot.margin = margin(0, 5, 0, 0, unit = "cm")) +
+  coord_cartesian(clip = "off", xlim = c(0.1,1)) +
+  labs(y = "Proportion of\ngenes removed", x = "dar threshold") +
+  theme(
+    legend.position = c(1.05, 0.5),
+    legend.title = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+  )
+```
+
+### Enrichment
+
+```{r pwf_len_thresh}
+pwf_len_thresh <- sapply(thresholds, function(x){
+  pwf <- geneDAR$MPSIIIBvsWT %>%
+    dplyr::filter(dar <= x) %>%
+    with(
+      nullp(
+        DEgenes = structure(DE, names = gene_id),
+        bias.data = length,
+        plot.fit = FALSE
+      )
+    )
+}, simplify = FALSE) %>%
+  set_names(thresholds)
+```
+
+```{r goseq_len_thresh}
+goseq_len_thresh <- sapply(pwf_len_thresh, function(x){
+  goseq(x, gene2cat = ens_to_go) %>%
+    as_tibble() %>%
+    dplyr::select(
+      id = category, n_de = numDEInCat, n_total = numInCat, 
+      p = over_represented_pvalue, term
+    ) %>%
+    left_join(go_summaries)
+}, simplify = FALSE)
+goseq_len_thresh <- lapply(seq_along(goseq_len_thresh), function(ind){
+  goseq_len_thresh[[ind]] %>%
+    dplyr::filter(n_de > 0, n_total >= 5) %>%
+    mutate(
+      fdr = p.adjust(p, method = "fdr"),
+      sig = fdr < 0.05,
+      rank = row_number(),
+      threshold = thresholds[ind]
+    ) %>%
+    dplyr::select(
+      id, n_de, n_total, p, fdr, sig, ontology, term, rank, threshold
+    )
+})
+```
+
+### Rank visualisation
+
+```{r goseq_len_thresh_top}
+goseq_len_thresh_top <- lapply(goseq_len_thresh, function(x){
+  x[1:10,] %>%
+    pull(id)
+}) %>%
+  unlist() %>%
+  unique()
+```
+
+```{r cols}
+set.seed(2)
+cols <- setNames(
+  ## Sample to randomise colouring so that terms with similar ranks aren't
+  ## assigned similar colours
+  sample(hue_pal()(length(goseq_len_thresh_top)), length(goseq_len_thresh_top)),
+  goseq_len_thresh_top
 )
 ```
 
-```{r}
-fisher <- runTest(GO_data, "classic", "fisher")
-ks <- runTest(GO_data, "classic", "ks")
-GenTable(GO_data, fisher = fisher, ks = ks, orderBy = "fisher") %>%
-  left_join(GO_terms, by = c("GO.ID" = "GOID")) %>%
-  as_tibble()
+```{r rank_plot_len}
+rank_plot_len <- lapply(goseq_len_thresh, function(x){
+  x %>%
+    dplyr::filter(id %in% goseq_len_thresh_top) %>%
+    mutate(rel_rank = row_number())
+}) %>%
+  bind_rows() %>%
+  mutate(
+    label = ifelse(
+      threshold == 1,
+      str_trunc(term, width = 30),
+      NA
+    )
+  ) %>%
+  ggplot(aes(
+    threshold,
+    rel_rank,
+    group = id,
+    colour = id,
+    fill = factor(ifelse(sig, id, NA)),
+  )) +
+  geom_line() +
+  geom_point(shape = 21, size = 4) +
+  geom_text(aes(label = rank), colour = "black", size = 2.1) +
+  geom_text(aes(x = 1.01, label = label), size = 3.2, hjust = 0, na.rm = TRUE) +
+  scale_y_reverse(breaks = seq(1, length(goseq_len_thresh_top), 1)) +
+  scale_x_continuous(breaks = thresholds) +
+  scale_fill_manual(values = cols, na.value="white") +
+  scale_colour_manual(values = cols) +
+  labs(x = "dar score cut-off", y = "\nRelative rank") +
+  theme(plot.margin = margin(0, 5, 0, 0, unit = "cm")) +
+  coord_cartesian(clip = "off") +
+  theme(
+    legend.position = "none",
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.border = element_blank(),
+    axis.title.x = element_blank(),
+  )
 ```
 
-```{r}
-all_genes <- topTables$MPSIIIBvsWT %>%
-    # mutate(stat = -log10(PValue) * sign(logFC)) %>%
-    mutate(stat = -log10(PValue)) %>%
-    dplyr::arrange(desc(stat)) %>%
-    with(structure(stat, names = gene_id))
-# suppressMessages({
-  tmp <- runTest(GO_data, "weight01", "ks")
-# })
-GenTable(GO_data, p = tmp, topNodes = 30) %>%
-  dplyr::mutate(p = as.numeric(p), sig = p < 0.05)
+```{r rank_plot_len_vis}
+ggarrange(
+  rank_plot_len,
+  NULL,
+  thresh_plot,
+  ncol = 1,
+  heights = c(4,0.2,1)
+)
+```
+
+### p-value visualisation
+
+```{r goseq_len_thresh_sig}
+goseq_len_thresh_sig <- lapply(goseq_len_thresh, function(x){
+  x %>%
+    dplyr::filter(sig) %>%
+    pull(id)
+}) %>%
+  unlist() %>%
+  unique()
+```
+
+```{r p_plot_len}
+p_plot_len <- lapply(goseq_len_thresh, function(x){
+  x %>%
+    dplyr::filter(id %in% goseq_len_thresh_sig) %>%
+    mutate(rel_rank = row_number())
+}) %>%
+  bind_rows() %>%
+  mutate(
+    label = ifelse(
+      threshold == 1,
+      str_trunc(term, width = 30),
+      NA
+    )
+  ) %>%
+  ggplot(aes(
+    threshold,
+    -log10(p),
+    group = id,
+    colour = id,
+    fill = factor(ifelse(sig, id, NA))
+  )) +
+  geom_line() +
+  geom_point(shape = 21, size = 4) +
+  geom_text(aes(label = n_de), colour = "black", size = 2.1) +
+  scale_x_continuous(breaks = thresholds) +
+  scale_colour_manual(values = cols) +
+  scale_fill_manual(values = cols, na.value="white") +
+  labs(x = "dar threshold", y = log10plab) +
+  facet_wrap(~term, ncol = 2) +
+  theme(
+    legend.position = "none",
+    panel.grid.minor.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+  )
+```
+
+```{r p_plot_len_vis}
+p_plot_len
 ```
 
