@@ -261,7 +261,7 @@ pwf_len <- geneDAR$MPSIIIBvsWT %>%
 We can plot the PWF to assess the impact of transcript length bias on our data.
 
 ```{r plot_pwf_len}
-plotPWF(pwf_len, binsize = 200)
+plotPWF(pwf_len, bins = 200)
 ```
 
 The graph above illustrates that there is minimal transcript length bias in our data, which reinforces our decision to not apply `cqn` for differential testing (see `de.Rmd`).
@@ -339,7 +339,7 @@ goseq_dar %>%
 Overall, the results between using transcript length and DAR are quite similar.
 Three terms (N-acetylneuraminate catabolic process, N-acetylglucosamine metabolic process, and lysosome) achieved significance in both analyses.
 These are GO terms that we expect to see in transcriptome comparisons of MPSIIIB mutants with wild-types.
-However, using DAR as bias data increased the significance of the relevant terms, while decreasing the significance of other terms.
+However, using DAR as bias data increased the significance of the relevant terms.
 This might mean that using DAR as bias data achieves more meaningful results when length bias is not present.
 If lenth bias was present, this could be accounted for at the DE testing stage with `cqn`, and then DAR could be used at the enrichment testing stage with `goseq` (or by weighting ranks in the case of GSEA).
 
@@ -366,9 +366,11 @@ lbSimpleDT(goseq_dar_res, cap = "goseq using DAR as bias data")
 ```{r goseq_comparison_plot}
 safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
                              "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
-top_terms_len <- goseq_len_res[1:5,] %>%
+top_terms_len <- goseq_len_res %>%
+  dplyr::filter(sig) %>%
   pull(term)
-top_terms_dar <- goseq_dar_res[1:5,] %>%
+top_terms_dar <- goseq_dar_res %>%
+  dplyr::filter(sig) %>%
   pull(term)
 plot_terms <- rev(unique(c(top_terms_len, top_terms_dar)))
 goseq_len_res %>%
@@ -405,7 +407,7 @@ goseq_len_res %>%
     labels = c("Transcript length", "DAR")
   ) +
   scale_y_continuous(breaks = seq(0, 6, 1)) +
-  labs(x = "GO term", y = log10plab, fill = "Bias data input")
+  labs(x = "GO term", y = log10plab, fill = "Bias data")
 ```
 
 # goseq with DAR thresholding
