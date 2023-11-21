@@ -58,12 +58,12 @@ goseq_len_res %>%
   ) %>%
   ggplot(aes(term, -log10(p), group = p_group, fill = p_group)) +
   geom_bar(stat = "identity", position = "dodge", colour = "black") +
-  geom_text(
-    aes(term, -log10(p) + 0.1, group = p_group, label = labs),
-    position = position_dodge2(width = 0.9, padding = 0.2),
-    size = 5,
-    vjust = 0.77
-  ) +
+  # geom_text(
+  #   aes(term, -log10(p) + 0.1, group = p_group, label = labs),
+  #   position = position_dodge2(width = 0.9, padding = 0.2),
+  #   size = 5,
+  #   vjust = 0.77
+  # ) +
   coord_flip() +
   scale_fill_manual(
     limits = c("len_p", "dar_p"),
